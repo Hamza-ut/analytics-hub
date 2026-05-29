@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-5">
+
+        <div class="text-center mb-4">
+
+            <h2>Login</h2>
+
+            <p class="text-muted">
+                Sign in to access your projects and files.
+            </p>
+
+        </div>
+
+        {% if form.errors %}
+
+        <div class="alert alert-danger">
+            Invalid username or password.
+        </div>
+
+        {% endif %}
+
+        <div class="card">
+
+            <div class="card-body">
+
+                <form method="post">
+
+                    {% csrf_token %}
+
+                    <div class="form-group">
+
+                        <label>Username</label>
+                        {{ form.username }}
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Password</label>
+                        {{ form.password }}
+
+                    </div>
+
+                    <button type="submit"
+                        class="btn btn-primary btn-block">
+
+                        Login
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <div class="text-center mt-3">
+
+            <a href="#" class="text-muted">
+                Forgot your password?
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock content %}
+

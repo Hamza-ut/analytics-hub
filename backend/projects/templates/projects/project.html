@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="mb-5">
+
+    <h1 class="mb-3">
+        Create New Project
+    </h1>
+
+    <p class="text-muted">
+        Create a project by selecting a pipeline
+        and choosing the required input files.
+    </p>
+
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="alert alert-info">
+
+    <h5 class="mb-3">
+        Before You Start
+    </h5>
+
+    <ul class="mb-0">
+
+        <li>
+            Upload files before creating a project.
+        </li>
+
+        <li>
+            Files associated with a project cannot be deleted.
+        </li>
+
+        <li>
+            <a href="{% url 'uploads:upload' %}">
+                Upload Files
+            </a>
+        </li>
+
+    </ul>
+
+</div>
+
+<hr class="my-5">
+
+<!-- TIMEPOINT PIPELINE -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h3 class="card-title">
+            Optimal Timepoint
+        </h3>
+
+        <p class="text-muted">
+            Select one CSV dataset and define the required column fields.
+        </p>
+
+        <div class="alert alert-light border">
+
+            <strong>Required columns:</strong>
+
+            group, dose, OD, and time field names
+            must match exactly (case-sensitive).
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input type="hidden" name="pipeline" value="TIMEPOINT">
+
+            <div class="form-group">
+
+                <label>
+                    Select File
+                </label>
+
+                <select name="timepoint_file"
+                    class="form-control"
+                    required>
+
+                    <option value="" disabled selected>
+                        Select a file
+                    </option>
+
+                    {% for file in user_files %}
+                    <option value="{{ file.id }}">
+                        {{ file.original_filename }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Group Fields
+                </label>
+
+                <input type="text"
+                    name="group_fields"
+                    class="form-control"
+                    placeholder="Species, Treatment"
+                    value="{{ request.POST.group_fields }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Dose Field
+                </label>
+
+                <input type="text"
+                    name="dose_field"
+                    class="form-control"
+                    placeholder="Dose"
+                    value="{{ request.POST.dose_field }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    OD Field
+                </label>
+
+                <input type="text"
+                    name="od_field"
+                    class="form-control"
+                    placeholder="RawOD"
+                    value="{{ request.POST.od_field }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Time Field
+                </label>
+
+                <input type="text"
+                    name="time_field"
+                    class="form-control"
+                    placeholder="Time"
+                    value="{{ request.POST.time_field }}">
+
+            </div>
+
+            <button type="submit"
+                class="btn btn-primary">
+
+                Create Timepoint Project
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- STRAIN QC PIPELINE -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h3 class="card-title">
+            Strain QC
+        </h3>
+
+        <p class="text-muted">
+            Create a Strain QC project
+            using FASTA and FASTQ files.
+        </p>
+
+        <div class="alert alert-warning">
+
+            This pipeline is currently in development.
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <input type="hidden" name="pipeline" value="STRAIN_QC">
+
+            <div class="form-group">
+
+                <label>
+                    Reference File
+                </label>
+
+                <select name="ref_file"
+                    class="form-control"
+                    required>
+
+                    <option value="" disabled selected>
+                        Select reference file
+                    </option>
+
+                    {% for file in user_files %}
+                    <option value="{{ file.id }}">
+                        {{ file.original_filename }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Read Files
+                </label>
+
+                <small class="form-text text-muted mb-2">
+                    Select one or two FASTQ files.
+                    Use Ctrl / Cmd for multiple selection.
+                </small>
+
+                <select name="read_files"
+                    class="form-control"
+                    multiple
+                    size="5"
+                    required>
+
+                    {% for file in user_files %}
+                    <option value="{{ file.id }}">
+                        {{ file.original_filename }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <button type="submit"
+                class="btn btn-secondary">
+
+                Create Strain QC Project
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+

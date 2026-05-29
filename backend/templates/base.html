@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
+
+  <!-- Icons for footer -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <title>{% block title %}Biofoundry Platform{% endblock %}</title>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <div class="container">
+
+      <a class="navbar-brand font-weight-bold" href="{% url 'home' %}">
+        Biofoundry - Analytics Hub
+      </a>
+
+      <div class="ml-auto">
+
+        {% if user.is_authenticated %}
+
+        <span class="text-muted mr-3">
+          👤 {{ user.username }}
+        </span>
+
+        <a class="btn btn-sm btn-outline-primary mr-2"
+          href="{% url 'dashboard:dashboard' %}">
+          Dashboard
+        </a>
+
+        <a class="btn btn-sm btn-outline-danger"
+          href="{% url 'accounts:logout' %}">
+          Logout
+        </a>
+
+        {% else %}
+
+        <a class="btn btn-sm btn-outline-primary mr-2"
+          href="{% url 'accounts:login' %}">
+          Login
+        </a>
+
+        <a class="btn btn-sm btn-primary"
+          href="{% url 'accounts:signup' %}">
+          Register
+        </a>
+
+        {% endif %}
+
+      </div>
+
+    </div>
+  </nav>
+
+  {% include "messages.html" %}
+
+  <main class="py-5">
+    <div class="container">
+      {% block content %}
+      {% endblock %}
+    </div>
+  </main>
+
+  <footer class="text-center text-muted py-4 border-top">
+    <div class="container">
+
+      <p class="mb-2">
+        © 2026 Biofoundry Project
+      </p>
+
+      <p class="mb-0">
+        <a href="https://digibio.ut.ee/biofoundry/" target="_blank">Website</a>
+        |
+        <a href="https://gitlab.cs.ut.ee/estonian-biofoundry" target="_blank">GitLab</a>
+        |
+        <a href="https://www.instagram.com/digibio.est/" target="_blank">Instagram</a>
+      </p>
+
+    </div>
+  </footer>
+
+</body>
+
+
+
+</html>

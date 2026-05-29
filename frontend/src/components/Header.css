@@ -1,0 +1,15 @@
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.header-nav .nav-link {
+  background: none;
+  border: none;
+  color: #0076ff;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 15px;
+}
