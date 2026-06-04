@@ -25,7 +25,6 @@ class File(models.Model):
         unique=True,
         default=generate_upload_id,
         editable=False,
-        db_collation="C",
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     file = models.FileField(upload_to=upload_file_path)
