@@ -12,31 +12,57 @@ Actual compute heavy workflows by Marko will come here later
 
 ## Current State
 
-The REST API is complete and functional but the frontend is currently in active development — for now the platform uses Django HTML templates for the UI and non api based views for backend. The React frontend (`frontend/`) is being built in parallel and will replace the templates once ready.
+The REST API is complete and functional. The frontend is currently in active development — for now the platform uses Django HTML templates for the UI. The React frontend (`frontend/`) is being built in parallel and will replace the templates once ready.
+
+The platform runs in Docker for development. Gunicorn serves the Django application and Nginx runs on the host OS as a reverse proxy.
+
+HPC integration (Rocket cluster via SSH/SFTP + SLURM) is implemented and can be enabled by setting `USE_HPC=True` in `.env`. It is not in active use for the current deployment.
 
 ## Tech Stack
 
 | Layer                     | Technology                             |
 | ------------------------- | -------------------------------------- |
 | Backend                   | Django 4.2, Django REST Framework 3.17 |
+| Application server        | Gunicorn                               |
+| Reverse proxy             | Nginx (host OS)                        |
 | Database                  | PostgreSQL                             |
 | Task queue                | Celery 5.6 + Redis                     |
 | Analysis engine           | pandas, numpy, scikit-learn            |
+| HPC (optional)            | Paramiko 5.0, Rocket cluster (SLURM)   |
+| Containerisation          | Docker, docker-compose                 |
 | Frontend (current)        | Django HTML templates                  |
 | Frontend (in development) | React 19, Vite, Axios                  |
 
 ## Prerequisites
 
-- Python 3.12+
-- Node.js 18+
-- PostgreSQL (running and accessible)
-- Redis (running on localhost:6379)
+**With Docker (recommended for dev):**
+- Docker and docker-compose
+
+**Without Docker:**
+- Python 3.12+, Node.js 18+, PostgreSQL, Redis
 
 ## Getting Started
 
-### 1. Backend
+### Option A — Docker (recommended)
 
 ```bash
+docker-compose up --build
+```
+
+The backend will be available at `http://localhost:8000`.
+
+To run with Nginx on the host:
+
+```bash
+sudo cp backend/nginx.conf /etc/nginx/sites-available/analytics-hub
+sudo ln -s /etc/nginx/sites-available/analytics-hub /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Option B — Local (manual)
+
+```bash
+# Backend
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
@@ -46,29 +72,19 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The backend will be available at `http://localhost:8000`.
-
-### 2. Celery Worker
-
-In a separate terminal:
-
 ```bash
+# Celery worker (separate terminal)
 cd backend
 source .venv/bin/activate
-python -m celery -A config worker -l info
+python -m celery -A config worker --beat -l info
 ```
 
-Redis must be running before starting the worker.
-
-### 3. Frontend (React dev server)
-
 ```bash
+# Frontend dev server (separate terminal)
 cd frontend
 npm install
 npm run dev
 ```
-
-The React dev server will be available at `http://localhost:5173`.
 
 ## API Endpoints
 
@@ -104,23 +120,27 @@ The React dev server will be available at `http://localhost:5173`.
 
 ```
 analytics-hub/
+├── docker-compose.yml
 ├── backend/
-│   ├── config/           Django project config (settings, urls, celery, wsgi)
-│   ├── accounts/         Authentication — signup, login, logout
-│   ├── uploads/          File management — CSV/FASTQ/FASTA, async MD5 verification
-│   ├── projects/         Pipeline orchestration — ProjectRun model + Celery tasks
-│   ├── dashboard/        User dashboard view
-│   ├── api/v1/           DRF REST API (accounts, uploads, projects)
-│   └── drc_timepoint/    First analysis pipeline (optimal timepoint identifier for DRC modelling)
-└── frontend/             React 19 + Vite (in development, replacing Django templates)
+│   ├── Dockerfile
+│   ├── entrypoint.sh         collectstatic + migrate + start Gunicorn
+│   ├── gunicorn.conf.py      Gunicorn worker configuration
+│   ├── nginx.conf            Nginx config (deployed to host OS)
+│   ├── config/               Django project config (settings, urls, celery, wsgi)
+│   ├── accounts/             Authentication — signup, login, logout
+│   ├── uploads/              File management — CSV/FASTQ/FASTA, async MD5 verification
+│   ├── projects/             Pipeline orchestration — ProjectRun model + Celery tasks
+│   ├── dashboard/            User dashboard view (Django template)
+│   ├── api/v1/               DRF REST API (accounts, uploads, projects)
+│   ├── drc_timepoint/        First analysis pipeline (optimal timepoint for DRC modelling)
+│   ├── hpc_services/         SSH/SFTP/SLURM utilities for Rocket HPC (USE_HPC=True to enable)
+│   └── hpc_jobs/             Scripts deployed to Rocket cluster (run_analysis.py, submit_drc.sh)
+└── frontend/                 React 19 + Vite (in development, replacing Django templates)
     └── src/
-        └── components/   Header, Homepage, Login, Signup, Dashboard, Footer
+        └── components/       Header, Homepage, Login, Signup, Dashboard, Footer
 ```
 
 ## Future Roadmap (priority order)
 
-1. **HPC computation** — route heavy pipelines to the Rocket cluster (SLURM) via SSH/SFTP instead of running locally on Celery
-2. **Nginx + Gunicorn** — learn the production serving stack: Gunicorn replaces `manage.py runserver`, Nginx sits in front as a reverse proxy handling HTTPS and static files.
-3. **Dockerization** — containerize all services (Django + Gunicorn + Nginx + Celery + Redis + PostgreSQL) into a docker-compose setup so UT IT can deploy via Kubernetes
-4. **API tests** — endpoints currently tested manually via Postman; write pytest suite for `api/v1` before the React migration
-5. **React frontend** — complete the React SPA and retire Django templates, consuming the existing API
+1. **API tests** — endpoints currently tested manually via Postman; write pytest suite for `api/v1` before the React migration
+2. **React frontend** — complete the React SPA and retire Django templates, consuming the existing API
