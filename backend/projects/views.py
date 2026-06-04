@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 
 from .models import Pipeline, ProjectRun
-from .tasks import run_timepoint, run_sequence
+from .tasks import run_timepoint, run_sequence  # used by run_project_celery
 from .utils import handle_sequence, is_stuck, get_user_files, validate_timepoint_logic, get_user_file
 
 
@@ -39,7 +39,6 @@ def create_project(request):
                 config=config_data,
             )
             project.files.add(file_obj)
-            run_timepoint.delay(project.id)
             return redirect("dashboard:dashboard")
 
         elif pipeline_name == "STRAIN_QC":
@@ -88,6 +87,7 @@ def run_project_celery(request, project_id):
         project.error_message = None
         project.started_at = None
         project.completed_at = None
+        project.slurm_job_id = None
         project.save()
 
         def queue_task():

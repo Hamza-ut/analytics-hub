@@ -10,7 +10,8 @@ from rest_framework import status
 
 from .serializers import FileSerializer
 from uploads.models import File
-from uploads.tasks import process_file_checksum
+from uploads.tasks import process_file_pipeline_task
+from uploads.services import delete_file, stream_file
 
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Sum
@@ -25,7 +26,7 @@ def upload(request):
     if serializer.is_valid():
         file_instance = serializer.save()
 
-        process_file_checksum.delay(file_instance.id)
+        process_file_pipeline_task.delay(file_instance.id)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
@@ -54,21 +55,15 @@ def file_detail(request, upload_id):
         download_flag = request.query_params.get("download", "").lower()
 
         if action == "download" or download_flag == "true":
-            # Now it doesn't matter if the browser sends:
-            # ?action=DOWNLOAD, ?Action=Download, or ?download=TRUE
-            response = FileResponse(file_obj.file.open(), as_attachment=True)
+            file_handle = stream_file(file_obj)
+            response = FileResponse(file_handle, as_attachment=True)
             response["Content-Disposition"] = (
                 f'attachment; filename="{file_obj.original_filename}"'
             )
             return response
-        # otherwise, just return the file metadata
-        serializer = FileSerializer(file_obj)
-        return Response(serializer.data)
+        return Response(FileSerializer(file_obj).data)
 
-    # --- HANDLE DELETE
     if request.method == "DELETE":
-        # Check if any projects are using this file
-        # 'projects' is the related_name we should have in our File model's ManyToMany
         if file_obj.projects.exists():
             return Response(
                 {
@@ -78,43 +73,27 @@ def file_detail(request, upload_id):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        file_obj.delete()
+        delete_file(file_obj)
         return Response(
             {"message": "File deleted successfully."}, status=status.HTTP_204_NO_CONTENT
         )
 
 
-# get all files for a user (admin can see all, regular users see only theirs)
 @api_view(["GET"])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def files_list(request):
-    # If we are here, the user is definitely logged in.
-    if request.user.is_superuser:
-        files = File.objects.all()
-    else:
-        files = File.objects.filter(user=request.user)
-
-    serializer = FileSerializer(files, many=True)
-    return Response(serializer.data)
+    files = File.objects.all() if request.user.is_superuser else File.objects.filter(user=request.user)
+    return Response(FileSerializer(files, many=True).data)
 
 
-# get all file stats(admin can see all, regular users see only theirs)
 @api_view(["GET"])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_stats(request):
-    if request.user.is_superuser:
-        files = File.objects.all()
-    else:
-        files = File.objects.filter(user=request.user)
-
-    # Your ORM logic - nice and efficient
+    files = File.objects.all() if request.user.is_superuser else File.objects.filter(user=request.user)
     stats = files.aggregate(total_files=Count("id"), total_size=Sum("file_size"))
-
     total_bytes = stats["total_size"] or 0
-
-    # Let's give React some helpful pre-calculated numbers
     return Response(
         {
             "total_files": stats["total_files"],

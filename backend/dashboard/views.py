@@ -1,6 +1,7 @@
 # dashboard/views.py
-
+import logging
 from uploads.models import File
+from uploads.services import delete_file, stream_file
 from django.contrib import messages
 from projects.utils import is_stuck
 from projects.models import ProjectRun
@@ -13,6 +14,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.postgres.aggregates import StringAgg
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
+
+logger = logging.getLogger(__name__)
 
 
 @require_POST
@@ -33,7 +36,7 @@ def delete_project_view(request, project_id):
     # 4. Cleanup
     project_name = project.project_id
     project.delete()  # This also deletes TimepointResult due to CASCADE
-    
+
     messages.success(request, f"Project {project_name} has been deleted.")
     return redirect("dashboard:dashboard")
 
@@ -56,8 +59,8 @@ def delete_file_view(request, file_id):
             f"Cannot delete '{file_obj.original_filename}': It is being used by one or more projects.",
         )
         return redirect("dashboard:dashboard")
-    # Step 4: delete the file (this triggers post_delete signal)
-    file_obj.delete()
+    # Step 4: delete the file (handles HPC cleanup + DB removal)
+    delete_file(file_obj)
     # Step 5: redirect to dashboard with a success message
     return redirect("dashboard:dashboard")
 
@@ -71,15 +74,16 @@ def download_file_view(request, file_id):
     if file_obj.user != request.user and not request.user.is_superuser:
         raise Http404("You do not have permission to download this file.")
 
-    # Step 3: send file as a response
-    if not file_obj.file:
-        raise Http404("File not found on the server.")
+    if not file_obj.file or not file_obj.file.name:
+        raise Http404("File reference not found in the application records.")
 
-    response = FileResponse(file_obj.file.open("rb"), as_attachment=True)
-    response["Content-Disposition"] = (
-        f'attachment; filename="{file_obj.original_filename}"'
-    )
-    return response
+    try:
+        file_handle = stream_file(file_obj)
+    except Exception as e:
+        logger.error(f"File streaming failed for {file_obj.upload_id}: {e}")
+        raise Http404("Unable to retrieve file.")
+
+    return FileResponse(file_handle, as_attachment=True, filename=file_obj.original_filename)
 
 
 @login_required
@@ -90,17 +94,17 @@ def dashboard_view(request):
         projects = ProjectRun.objects.all().prefetch_related("files")
     else:
         files = File.objects.filter(user=request.user)
-        projects = ProjectRun.objects.filter(user=request.user).prefetch_related("files")
+        projects = ProjectRun.objects.filter(user=request.user).prefetch_related(
+            "files"
+        )
 
     # 2. Get file names for project display
     projects = ProjectRun.objects.annotate(
-        file_names=StringAgg('files__original_filename', delimiter=', ')
+        file_names=StringAgg("files__original_filename", delimiter=", ")
     )
     # 3. Identify "Locked" files (those associated with any project)
     # values_list returns a list of IDs; we turn it into a set for O(1) lookup speed
-    locked_file_ids = set(
-        ProjectRun.objects.values_list('files', flat=True)
-    )
+    locked_file_ids = set(ProjectRun.objects.values_list("files", flat=True))
 
     # 4. Filter Uploads (Search)
     search_query = request.GET.get("search")
@@ -108,8 +112,16 @@ def dashboard_view(request):
         files = files.filter(original_filename__icontains=search_query)
 
     # 5. Sort Uploads
-    allowed_sorts = ["upload_id", "-upload_id", "uploaded_at", "-uploaded_at", 
-                     "file_size", "-file_size", "original_filename", "-original_filename"]
+    allowed_sorts = [
+        "upload_id",
+        "-upload_id",
+        "uploaded_at",
+        "-uploaded_at",
+        "file_size",
+        "-file_size",
+        "original_filename",
+        "-original_filename",
+    ]
     sort = request.GET.get("sort", "-uploaded_at")
     if sort not in allowed_sorts:
         sort = "-uploaded_at"

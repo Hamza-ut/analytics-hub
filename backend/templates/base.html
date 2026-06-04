@@ -38,10 +38,10 @@
           Dashboard
         </a>
 
-        <a class="btn btn-sm btn-outline-danger"
-          href="{% url 'accounts:logout' %}">
-          Logout
-        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+        </form>
 
         {% else %}
 

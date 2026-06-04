@@ -57,6 +57,3 @@ Thumbs.db
 # Celery
 celerybeat-schedule
 celerybeat.pid
-
-# HPC scratchpad — promote to hpc/ module before tracking
-backend/paramiko_testing/
