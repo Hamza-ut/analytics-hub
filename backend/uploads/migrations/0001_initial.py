@@ -19,11 +19,11 @@ class Migration(migrations.Migration):
             name='File',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('upload_id', models.CharField(db_collation='C', default=uploads.models.generate_upload_id, editable=False, max_length=20, unique=True)),
+                ('upload_id', models.CharField(default=uploads.models.generate_upload_id, editable=False, max_length=20, unique=True)),
                 ('file', models.FileField(upload_to=uploads.models.upload_file_path)),
                 ('original_filename', models.TextField()),
                 ('file_size', models.BigIntegerField(blank=True, null=True)),
-                ('status', models.CharField(choices=[('UPLOADING', 'Uploading'), ('UPLOADED', 'Uploaded'), ('FAILED', 'Failed')], default='UPLOADING', max_length=10)),
+                ('status', models.CharField(choices=[('UPLOADING', 'Uploading/Processing'), ('UPLOADED', 'Uploaded & Verified'), ('FAILED', 'Failed')], default='UPLOADING', max_length=10)),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('md5', models.CharField(blank=True, max_length=64, null=True)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
