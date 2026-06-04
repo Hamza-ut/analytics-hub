@@ -1,0 +1,16 @@
+stages:
+  - test
+
+run_tests:
+  stage: test
+  image: python:3.11-slim
+  variables:
+    ENV: ci
+    SECRET_KEY: $SECRET_KEY
+  script:
+    - cd backend
+    - pip install -r requirements.txt
+    - python manage.py check
+    - python manage.py test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"

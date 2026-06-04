@@ -1,0 +1,61 @@
+services:
+  backend:
+    build: ./backend
+    image: analytics-hub/backend:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://redis:6379/4
+    volumes:
+      - ./backend:/app # for development, remove in production
+      - django_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+  celery:
+    build: ./backend
+    image: analytics-hub/celery:latest
+    command: celery -A config worker --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://redis:6379/4
+    volumes:
+      - ./backend:/app # for development, remove in production
+      - django_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18-alpine  
+    environment:
+      - POSTGRES_DB=analytics_hub_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pcadmin
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d analytics_hub_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  django_media:
+  redis_data:

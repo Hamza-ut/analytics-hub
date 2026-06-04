@@ -11,7 +11,9 @@ __pycache__/
 
 # Django
 *.log
-db.sqlite3
+db.sqlite3 
+media/ 
+staticfiles/
 
 # User uploaded files
 media/
@@ -22,3 +24,6 @@ media/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Celery Beat runtime schedule file
+*celerybeat-schedule*

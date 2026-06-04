@@ -13,6 +13,7 @@ class ProjectRunAdmin(admin.ModelAdmin):
         "project_id",
         "pipeline",
         "status",
+        "slurm_job_id",
         "user",
         "created_at",
         "started_at",
