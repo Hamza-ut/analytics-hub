@@ -4,11 +4,12 @@ stages:
 run_tests:
   stage: test
   image: python:3.11-slim
+  variables:
+    ENV: ci
   script:
     - cd backend
     - pip install -r requirements.txt
     - python manage.py check
     - python manage.py test
-  only:
-    - dev
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
