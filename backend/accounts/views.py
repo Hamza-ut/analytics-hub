@@ -3,6 +3,7 @@ from .forms import CustomUserCreationForm
 from django.contrib.auth import login, logout
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import AuthenticationForm
+from django.views.decorators.http import require_POST
 
 
 # render always take template path
@@ -42,6 +43,7 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form})
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     messages.info(request, "You have successfully logged out.")

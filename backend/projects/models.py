@@ -1,10 +1,14 @@
+import os
 import secrets
+import logging
 from django.db import models
 from django.contrib.auth.models import User
 
+logger = logging.getLogger(__name__)
+
 
 def generate_project_id():
-    return f"PRJ_{secrets.token_hex(3).upper()}"
+    return f"prj_{secrets.token_hex(3).lower()}"
 
 
 class Pipeline(models.Model):
@@ -43,6 +47,17 @@ class ProjectRun(models.Model):
     duration = models.DurationField(null=True, blank=True)
     error_message = models.TextField(null=True, blank=True)
     celery_task_id = models.CharField(max_length=255, blank=True, null=True)
+    slurm_job_id = models.CharField(max_length=20, blank=True, null=True)
+
+    def delete(self, *args, **kwargs):
+        USE_HPC = os.getenv("USE_HPC", "False") == "True"
+        if USE_HPC:
+            try:
+                from hpc_services.job_manager import delete_project_output_from_hpc
+                delete_project_output_from_hpc(self.project_id)
+            except Exception as e:
+                logger.error(f"HPC output cleanup failed for {self.project_id}: {e}")
+        super().delete(*args, **kwargs)
 
     def __repr__(self):
         return f"ProjectRun(id={self.id}, project_id='{self.project_id}', status='{self.status}')"

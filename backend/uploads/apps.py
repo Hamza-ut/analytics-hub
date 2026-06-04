@@ -6,4 +6,8 @@ class UploadsConfig(AppConfig):
     name = "uploads"
 
     def ready(self):
+        # Keep your existing signals configuration safe
         import uploads.signals  # noqa
+
+        # Explicitly force-load your tasks file so Celery registers it on boot
+        import uploads.tasks  # noqa
