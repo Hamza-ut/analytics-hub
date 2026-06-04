@@ -6,6 +6,7 @@ run_tests:
   image: python:3.11-slim
   variables:
     ENV: ci
+    SECRET_KEY: "django-insecure-ci-testing-only-not-used-in-production"
   script:
     - cd backend
     - pip install -r requirements.txt
