@@ -1,60 +1,77 @@
+# shared params for backend and celery, using YAML anchors to avoid duplication
+x-backend-defaults: &backend-defaults
+  build: ./backend
+  env_file:
+    - ./backend/.env
+  volumes:
+    - ./backend:/app # for development, remove in production (host_path:container_path)
+    - django_media:/app/media
+  depends_on:
+    db:
+      condition: service_healthy
+    inmemorydb:
+      condition: service_healthy
+
 services:
+# my django
   backend:
-    build: ./backend
-    image: analytics-hub/backend:latest
+    <<: *backend-defaults
+    image: analytics-hub/backend:0.1.0
+    command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
-    environment:
-      - DB_HOST=db
-      - CELERY_BROKER_URL=redis://redis:6379/3
-      - CELERY_RESULT_BACKEND=redis://redis:6379/4
-    volumes:
-      - ./backend:/app # for development, remove in production
-      - django_media:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
 
+# celery
   celery:
-    build: ./backend
-    image: analytics-hub/celery:latest
-    command: celery -A config worker --loglevel=info
-    env_file:
-      - ./backend/.env
-    environment:
-      - DB_HOST=db
-      - CELERY_BROKER_URL=redis://redis:6379/3
-      - CELERY_RESULT_BACKEND=redis://redis:6379/4
-    volumes:
-      - ./backend:/app # for development, remove in production
-      - django_media:/app/media
+    <<: *backend-defaults
+    image: analytics-hub/celery:0.1.0
+    command: watchmedo auto-restart --directory=/app --pattern="*.py" --recursive -- celery -A config worker --loglevel=info
     depends_on:
       db:
         condition: service_healthy
+      inmemorydb:
+        condition: service_healthy
+      backend:
+        condition: service_started
 
+# database, port exposed for testing in dbeaver only in development, remove in production
   db:
-    image: postgres:18-alpine  
-    environment:
-      - POSTGRES_DB=analytics_hub_dev
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=pcadmin
+    image: postgres:18-alpine
+    env_file: ./backend/.env
     volumes:
       - postgres_data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d analytics_hub_dev"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 3s
       timeout: 3s
       retries: 5
 
-  redis:
+# redis for caching and celery broker
+  inmemorydb:
     image: redis:7.4-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
+# nginx for serving static files and reverse proxy to Django (commented out for now)
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./backend/nginx_docker.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - django_media:/app/media
+  #     - ./backend/staticfiles:/app/staticfiles:ro
+  #   depends_on:
+  #     - backend
+
+# volumes for data persistence
 volumes:
   postgres_data:
   django_media:
