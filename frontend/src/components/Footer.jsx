@@ -1,35 +1,33 @@
-import "./Footer.css";
-
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="site-footer">
-      <hr className="divider" />
-
-      <p>&copy; {new Date().getFullYear()} DigiBio Project</p>
-
-      <p className="footer-links">
-        <a href="https://digibio.ut.ee/" target="_blank" rel="noreferrer">
-          Website
-        </a>
-
-        <span> | </span>
-
+    <footer
+      style={{
+        padding: "15px",
+        backgroundColor: "#f8f9fa",
+        color: "#8a8888",
+        textAlign: "center",
+        fontSize: "14px",
+        borderTop: "1px solid #dee2e6",
+      }}
+    >
+      <p>© 2026 Biofoundry Project</p>
+      <p>
         <a
-          href="https://github.com/estonian-biofoundry"
+          href="https://digibio.ut.ee/biofoundry/"
           target="_blank"
           rel="noreferrer"
         >
-          GitHub
-        </a>
-
-        <span> | </span>
-
-        <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer">
-          Linkedin
-        </a>
-
-        <span> | </span>
-
+          Website
+        </a>{" "}
+        |{" "}
+        <a
+          href="https://gitlab.cs.ut.ee/estonian-biofoundry"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitLab
+        </a>{" "}
+        |{" "}
         <a
           href="https://www.instagram.com/digibio.est/"
           target="_blank"
@@ -41,5 +39,3 @@ function Footer() {
     </footer>
   );
 }
-
-export default Footer;

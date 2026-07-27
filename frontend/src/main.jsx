@@ -1,10 +1,18 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App.jsx"; // Imports your page layout
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
+import Footer from "./components/Footer.jsx";
 
-// Find the 'root' div in index.html, and plug our App into it
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <AuthProvider>
+      {/* 🎯 Wrap the entire App component so ALL sub-files can use navigate() safely */}
+      <BrowserRouter>
+        <App />
+        <Footer />
+      </BrowserRouter>
+    </AuthProvider>
+  </React.StrictMode>,
 );

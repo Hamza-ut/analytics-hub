@@ -1,71 +1,26 @@
-import { useState } from "react";
-import "./App.css";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./components/Home";
+import Signup from "./components/Signup";
+import Login from "./components/Login";
+import Dashboard from "./components/Dashboard";
 
-import Header from "./components/Header.jsx";
-import Footer from "./components/Footer.jsx";
-import Homepage from "./components/Homepage.jsx";
-
-import Signup from "./components/Signup.jsx";
-import Login from "./components/Login.jsx";
-import Dashboard from "./components/Dashboard.jsx";
-
-function App() {
-  const [view, setView] = useState("Homepage");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const homePageClick = () => {
-    setView("Homepage");
-  };
-
-  const loginClick = () => {
-    setView("Login");
-  };
-
-  const signupClick = () => {
-    setView("Signup");
-  };
-
-  const dashboardClick = () => {
-    setView("Dashboard");
-  };
-
-  const logoutClick = () => {
-    setView("Homepage");
-    setIsAuthenticated(false);
-  };
-
+export default function App() {
   return (
-    <div className="site-layout">
-      <Header
-        isAuthenticated={isAuthenticated}
-        homePageClick={homePageClick}
-        loginClick={loginClick}
-        signupClick={signupClick}
-        dashboardClick={dashboardClick}
-        logoutClick={logoutClick}
-      />
+    <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
+      {/* Navbar sits at the top of every page */}
+      <Navbar />
 
-      <p>debugger for my learning, page_name: {view}</p>
-
-      <main className="main-content">
-        {view === "Homepage" && (
-          <Homepage
-            isAuthenticated={isAuthenticated}
-            dashboardClick={dashboardClick}
-            signupClick={signupClick}
-          />
-        )}
-
-        {view === "Login" && <Login />}
-
-        {view === "Signup" && <Signup />}
-
-        {view === "Dashboard" && <Dashboard />}
+      {/* Main content changes based on the URL */}
+      <main style={{ padding: "20px 0" }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="*" element={<h3>404 Not Found</h3>} />
+        </Routes>
       </main>
-
-      <Footer />
     </div>
   );
 }
-
-export default App;
