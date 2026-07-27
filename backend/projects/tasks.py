@@ -6,7 +6,7 @@ from django.db import connection
 from django.utils import timezone
 
 from .models import ProjectRun
-from .utils import notify_slack
+from .utils import external_notify
 from projects.models import TimepointResult
 from drc_timepoint import run_analysis_from_config
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def run_timepoint(self, project_id):
     project = ProjectRun.objects.get(id=project_id)
 
-    notify_slack(project, status="starting")
+    external_notify(project, status="starting")
 
     project.status = "RUNNING"
     project.started_at = timezone.now()
@@ -29,10 +29,13 @@ def run_timepoint(self, project_id):
     if USE_HPC:
         try:
             from hpc_services.job_manager import submit_timepoint_job
+
             job_id = submit_timepoint_job(project)
             project.slurm_job_id = job_id
             project.save(update_fields=["slurm_job_id"])
-            logger.info(f"SLURM job {job_id} submitted for {project.project_id}. Polling will handle completion.")
+            logger.info(
+                f"SLURM job {job_id} submitted for {project.project_id}. Polling will handle completion."
+            )
         except Exception as e:
             logger.error(f"HPC submission failed for {project.project_id}: {e}")
             project.status = "FAILED"
@@ -40,7 +43,7 @@ def run_timepoint(self, project_id):
             project.completed_at = timezone.now()
             project.duration = project.completed_at - project.started_at
             project.save()
-            notify_slack(project, status="failed", error=e)
+            external_notify(project, status="failed", error=e)
         finally:
             connection.close()
         return
@@ -68,14 +71,14 @@ def run_timepoint(self, project_id):
         project.status = "SUCCESS"
         project.completed_at = timezone.now()
         project.duration = project.completed_at - project.started_at
-        notify_slack(project, status="success")
+        external_notify(project, status="success")
 
     except Exception as e:
         project.status = "FAILED"
         project.error_message = str(e)
         project.completed_at = timezone.now()
         project.duration = project.completed_at - project.started_at
-        notify_slack(project, status="failed", error=e)
+        external_notify(project, status="failed", error=e)
 
     finally:
         if not project.completed_at:
@@ -123,7 +126,7 @@ def poll_hpc_jobs():
                 if project.started_at:
                     project.duration = project.completed_at - project.started_at
                 project.save()
-                notify_slack(project, status="success")
+                external_notify(project, status="success")
                 logger.info(f"Project {project.project_id} completed.")
 
             elif status == "FAILED":
@@ -136,8 +139,10 @@ def poll_hpc_jobs():
                 if project.started_at:
                     project.duration = project.completed_at - project.started_at
                 project.save()
-                notify_slack(project, status="failed")
-                logger.error(f"Project {project.project_id} failed (job {project.slurm_job_id}).")
+                external_notify(project, status="failed", error=None)
+                logger.error(
+                    f"Project {project.project_id} failed (job {project.slurm_job_id})."
+                )
 
         except Exception as e:
             logger.error(
@@ -153,9 +158,16 @@ def run_sequence(self, project_id):
     """
     Placeholder — sequence analysis not yet implemented.
     """
+    # add external notification for starting and failing (since it will fail immediately)
     project = ProjectRun.objects.get(id=project_id)
+
+    external_notify(project, status="starting")
+
     project.status = "FAILED"
     project.error_message = "Sequence pipeline is not yet implemented."
     project.completed_at = timezone.now()
     project.save()
+
+    external_notify(project, status="failed", error=project.error_message)
+
     connection.close()

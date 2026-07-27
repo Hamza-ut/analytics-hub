@@ -1,8 +1,12 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 
 from .serializers import PipelineSerializer, ProjectRunSerializer
 
@@ -32,10 +36,16 @@ def project_run(request, project_id):
     project = get_object_or_404(ProjectRun, project_id=project_id)
 
     if project.user != request.user and not request.user.is_superuser:
-        return Response({"detail": "Not authorized to run this project."}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"detail": "Not authorized to run this project."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if project.status in ["QUEUED", "RUNNING"] and not is_stuck(project):
-        return Response({"message": "Project is already running."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"message": "Project is already running."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     with transaction.atomic():
         if hasattr(project, "timepoint_result"):
@@ -57,7 +67,9 @@ def project_run(request, project_id):
                     run_sequence.delay(project.id)
                 else:
                     project.status = "FAILED"
-                    project.error_message = f"No task handler for pipeline '{pipeline_name}'."
+                    project.error_message = (
+                        f"No task handler for pipeline '{pipeline_name}'."
+                    )
                     project.save()
             except Exception:
                 project.status = "FAILED"
@@ -93,9 +105,14 @@ def project_result(request, project_id):
                 for entry in raw_results
             ]
             return Response(reshaped, status=status.HTTP_200_OK)
-        return Response({"error": "Results not ready."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Results not ready."}, status=status.HTTP_404_NOT_FOUND
+        )
 
-    return Response({"error": "Pipeline not supported for results yet."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {"error": "Pipeline not supported for results yet."},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @api_view(["GET", "DELETE"])
@@ -105,18 +122,29 @@ def project_detail(request, project_id):
     project = get_object_or_404(ProjectRun, project_id=project_id)
 
     if project.user != request.user and not request.user.is_superuser:
-        return Response({"detail": "You do not have permission to access this project."}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"detail": "You do not have permission to access this project."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if request.method == "GET":
         return Response(ProjectRunSerializer(project).data)
 
     if request.method == "DELETE":
         if not request.user.is_superuser:
-            return Response({"detail": "Only administrators can delete projects."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Only administrators can delete projects."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if project.status == "RUNNING":
-            return Response({"error": "Cannot delete a running project."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Cannot delete a running project."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         project.delete()
-        return Response({"message": "Project deleted."}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"message": "Project deleted."}, status=status.HTTP_204_NO_CONTENT
+        )
 
 
 @api_view(["GET"])
@@ -131,8 +159,7 @@ def projects_list(request):
 
 
 @api_view(["GET"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def pipelines_list(request):
     pipelines = Pipeline.objects.filter(is_active=True)
     return Response(PipelineSerializer(pipelines, many=True).data)

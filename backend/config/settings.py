@@ -15,13 +15,11 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-ENV = os.getenv("ENV", "dev")
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+env_path = BASE_DIR / ".env"
+# Load environment variables from .env file located at the project root
+load_dotenv(env_path, override=True)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -52,9 +50,11 @@ INSTALLED_APPS = [
     # moving to rest framework for API endpoints
     "rest_framework",
     "rest_framework.authtoken",
+    "corsheaders",  # for frontend-backend communication
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # this should be at the top to ensure it runs before other middleware
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,7 +101,7 @@ else:
             "NAME": os.getenv("DB_NAME"),
             "USER": os.getenv("DB_USER"),
             "PASSWORD": os.getenv("DB_PASSWORD"),
-            "HOST": os.getenv("DB_HOST"),
+            "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT"),
         }
     }
@@ -172,3 +172,18 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 30.0,  # every 30 seconds
     },
 }
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+SESSION_COOKIE_NAME = "digibio_sid"
+SESSION_COOKIE_AGE = 86400 * 7  # 7 days
+SESSION_SAVE_EVERY_REQUEST = True  # refresh expiry on every request

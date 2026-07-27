@@ -1,6 +1,10 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
@@ -35,11 +39,14 @@ def login(request):
                 {
                     "token": token.key,
                     "user_id": user.pk,
+                    "username": user.username,
                     "email": user.email,
                 },
                 status=status.HTTP_200_OK,
             )
-        return Response({"error": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -49,3 +56,16 @@ def login(request):
 def logout(request):
     request.user.auth_token.delete()
     return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user(request):
+    return Response(
+        {
+            "id": request.user.id,
+            "username": request.user.username,
+            "email": request.user.email,
+        }
+    )

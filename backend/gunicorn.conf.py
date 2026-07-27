@@ -1,7 +1,7 @@
 # backend/gunicorn.conf.py
 import multiprocessing
 
-# 1. Replaces: --bind 127.0.0.1:8003
+# 1. bind
 bind = "127.0.0.1:8000"
 
 # 2. Replaces: -w 5 (We use code to calculate the perfect number of workers automatically!)
