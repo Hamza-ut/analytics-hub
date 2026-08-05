@@ -152,9 +152,15 @@ def project_detail(request, project_id):
 @permission_classes([IsAuthenticated])
 def projects_list(request):
     if request.user.is_superuser:
-        projects = ProjectRun.objects.all()
+        projects = (
+            ProjectRun.objects.all().select_related("user").prefetch_related("files")
+        )
     else:
-        projects = ProjectRun.objects.filter(user=request.user)
+        projects = (
+            ProjectRun.objects.filter(user=request.user)
+            .select_related("user")
+            .prefetch_related("files")
+        )
     return Response(ProjectRunSerializer(projects, many=True).data)
 
 

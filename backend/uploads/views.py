@@ -2,7 +2,7 @@ import os
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from uploads.models import File
-from .utils import validate_file
+from .utils import allowed_extension_and_size_check
 
 
 from .tasks import process_file_pipeline_task
@@ -14,7 +14,7 @@ def upload_view(request):
         uploaded_file = request.FILES["file"]
 
         # 1. Keep the quick validation (Checks format and size bounds instantly)
-        is_valid, error_msg = validate_file(uploaded_file)
+        is_valid, error_msg = allowed_extension_and_size_check(uploaded_file)
         if not is_valid:
             return render(request, "uploads/upload.html", {"error": error_msg})
 

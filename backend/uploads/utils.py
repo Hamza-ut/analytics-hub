@@ -2,6 +2,22 @@
 import hashlib
 
 
+# uploads/utils.py
+def human_readable_size(size_bytes: int) -> str:
+    """
+    Convert a file size in bytes to a human-readable string. Automatically chooses B, KB, MB, GB, TB.
+    """
+    if size_bytes == 0:
+        return "0B"
+    units = ["B", "KB", "MB", "GB", "TB"]
+    index = 0
+    size = float(size_bytes)
+    while size >= 1024 and index < len(units) - 1:
+        size /= 1024
+        index += 1
+    return f"{size:.2f} {units[index]}"
+
+
 def calculate_md5(file_obj):
     """
     Calculates MD5 hash of an uploaded file object.
@@ -25,7 +41,7 @@ ALLOWED_EXTENSIONS = [
     "gb",
     "genbank",
 ]
-MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024  # 10 GB
+MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024
 
 
 def get_file_extension(file_obj):
@@ -38,23 +54,7 @@ def get_file_extension(file_obj):
     return ext
 
 
-# uploads/utils.py
-def human_readable_size(size_bytes: int) -> str:
-    """
-    Convert a file size in bytes to a human-readable string. Automatically chooses B, KB, MB, GB, TB.
-    """
-    if size_bytes == 0:
-        return "0B"
-    units = ["B", "KB", "MB", "GB", "TB"]
-    index = 0
-    size = float(size_bytes)
-    while size >= 1024 and index < len(units) - 1:
-        size /= 1024
-        index += 1
-    return f"{size:.2f} {units[index]}"
-
-
-def validate_file(
+def allowed_extension_and_size_check(
     file_obj, max_size=MAX_FILE_SIZE, allowed_extensions=ALLOWED_EXTENSIONS
 ):
     # Check file size

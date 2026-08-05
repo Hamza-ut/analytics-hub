@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/config";
 
 export const AuthContext = createContext(null);
 
@@ -12,10 +13,28 @@ export function AuthProvider({ children }) {
     if (userData) setUser(userData); // Update user details if available
   }
 
-  function logout() {
-    localStorage.removeItem("userToken"); // Delete token from browser storage
-    setToken(null); // Clear token state
-    setUser(null); // Clear user state
+  async function logout() {
+    const currentToken = localStorage.getItem("userToken");
+
+    // 1. Tell Django to delete the token from the database
+    if (currentToken) {
+      try {
+        await fetch(`${API_BASE_URL}/accounts/logout/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${currentToken}`,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to invalidate token on server:", error);
+      }
+    }
+
+    // 2. Always clean up frontend state no matter what
+    localStorage.removeItem("userToken");
+    setToken(null);
+    setUser(null);
   }
 
   // Fetch user info whenever the token changes
@@ -30,12 +49,9 @@ export function AuthProvider({ children }) {
     // 2. Mini async function defined inside
     async function fetchUser() {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/v1/accounts/user/",
-          {
-            headers: { Authorization: `Token ${token}` },
-          },
-        );
+        const response = await fetch(`${API_BASE_URL}/accounts/user/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
 
         if (response.ok) {
           const userData = await response.json();

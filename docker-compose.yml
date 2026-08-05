@@ -5,7 +5,8 @@ x-backend-defaults: &backend-defaults
     - ./backend/.env
   volumes:
     - ./backend:/app # for development, remove in production (host_path:container_path)
-    - django_media:/app/media
+    - ./backend/media:/app/media # for development, if u want to see media in host rather in container
+    - ~/.ssh:/root/.ssh:ro # Mounts your SSH keys as read-only
   depends_on:
     db:
       condition: service_healthy

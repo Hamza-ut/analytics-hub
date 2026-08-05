@@ -1,10 +1,13 @@
 from rest_framework import serializers
 
 from uploads.models import File
-from uploads.utils import validate_file
+from uploads.utils import allowed_extension_and_size_check
 
 
 class FileSerializer(serializers.ModelSerializer):
+    # convert foreign key userid to username for displaying at frontend
+    user = serializers.ReadOnlyField(source="user.username")
+
     class Meta:
         model = File
         fields = [
@@ -14,6 +17,8 @@ class FileSerializer(serializers.ModelSerializer):
             "file_size",
             "status",
             "md5",
+            "uploaded_at",
+            "user",
         ]
         read_only_fields = [
             "upload_id",
@@ -21,12 +26,13 @@ class FileSerializer(serializers.ModelSerializer):
             "status",
             "md5",
             "original_filename",
+            "uploaded_at",
+            "user",
         ]
 
     def validate_file(self, value):
-        # We only check Extension here.
-        # For 10GB, we skip size check and move that to the background worker.
-        is_valid, error_msg = validate_file(value, max_size=10 * 1024 * 1024 * 1024)
+        # We check file size and allowed extensions.
+        is_valid, error_msg = allowed_extension_and_size_check(value)
         if not is_valid:
             raise serializers.ValidationError(error_msg)
         return value
@@ -41,5 +47,5 @@ class FileSerializer(serializers.ModelSerializer):
             file=uploaded_file,
             original_filename=uploaded_file.name,
             file_size=uploaded_file.size,
-            status="PENDING",  # It's waiting for the background worker
+            status="UPLOADING",  # It's waiting for the background worker
         )

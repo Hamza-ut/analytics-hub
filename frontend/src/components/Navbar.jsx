@@ -32,7 +32,7 @@ export default function Navbar() {
           textDecoration: "none",
         }}
       >
-        📊 Biofoundry
+        🧬 Analytics Hub
       </Link>
 
       <nav style={{ display: "flex", gap: "15px", alignItems: "center" }}>

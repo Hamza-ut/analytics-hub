@@ -9,7 +9,7 @@ export default function Home() {
     <div
       style={{ maxWidth: "600px", margin: "40px auto", textAlign: "center" }}
     >
-      <h2>Welcome to the Pipeline App Platform</h2>
+      <h2>Welcome to Biofoundry Analytics Hub</h2>
 
       {/* 2. If 'user' exists in AuthContext, greet them by name! */}
       {user && (

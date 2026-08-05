@@ -2,6 +2,9 @@ import { useState, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
+import { API_BASE_URL } from "../api/config";
+import axios from "axios";
+
 
 export default function Login() {
   const {
@@ -15,42 +18,39 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  async function onSubmit(formData) {
+  async function onSubmit(myData) {
     try {
       setApiMessage(null);
 
-      const response = await fetch(
-        "http://localhost:8000/api/v1/accounts/login/",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        },
-      );
+      const response = await axios({
+      method: "POST",
+      url: `${API_BASE_URL}/accounts/login/`,
+      data: myData,
+      timeout: 1000,
+    });
+    
+    login(response.data.token);
+    navigate("/");
 
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.token);
-        navigate("/");
-      } else {
-        // Formats Django error response or defaults to standard text
-        const errorText =
-          data.non_field_errors?.join(" ") ||
-          data.detail ||
-          data.error ||
-          "Invalid username or password!";
-
-        setApiMessage({
-          type: "error",
-          text: errorText,
-        });
-      }
     } catch (error) {
+      let errorText = "Cannot connect to server. Is backend running?";
+
+      // 1. If error.response exists, it means backend IS running and sent a message
+      if (error.response) {
+        const errorData = error.response.data;
+        errorText =
+          errorData.error ||
+          (errorData.non_field_errors && errorData.non_field_errors[0]) ||
+          errorData.detail ||
+          "Invalid username or password!";
+      }
+
+      // 2. Set the text message (works whether server is online or offline!)
       setApiMessage({
         type: "error",
-        text: "Network connection error occurred.",
+        text: errorText,
       });
+      
       console.error(error);
     }
   }

@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { API_BASE_URL } from "../api/config";
+import axios from "axios";
+
 
 export default function Signup() {
   const {
@@ -12,49 +15,47 @@ export default function Signup() {
 
   const [apiMessage, setApiMessage] = useState(null);
 
-  async function onSubmit(formData) {
+  async function onSubmit(myData) {
     try {
       setApiMessage(null);
 
-      const response = await fetch(
-        "http://localhost:8000/api/v1/accounts/signup/",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        },
-      );
+      const response = await axios({
+        method: "POST", 
+        url: `${API_BASE_URL}/accounts/signup/`, 
+        data: myData,
+        timeout: 3000,
+      
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Format Django validation errors (e.g., username already taken)
-        const formattedError = Object.entries(data)
-          .map(
-            ([field, msgs]) =>
-              `${field}: ${Array.isArray(msgs) ? msgs.join(" ") : msgs}`,
-          )
-          .join(" | ");
-
-        setApiMessage({
-          type: "error",
-          text: `Django rejected it: ${formattedError || "Signup failed."}`,
-        });
-        return;
-      }
-
-      // Shows "User created successfully." from your Django response
+      // SUCCESS: Runs when Django returns 201 CREATED
       setApiMessage({
         type: "success",
-        text: data.message || "User created successfully!",
+        text: response.data.message || "User created successfully!",
       });
 
       reset();
+
     } catch (error) {
+      let errorText = "Cannot connect to server. Is backend running?";
+      if (error.response) {
+        const errorData = error.response.data;
+
+        // Turn Django field errors object into a string: "username: A user with... | password: This..."
+        const formattedErrors = Object.entries(errorData)
+          .map(([field, msgs]) => {
+            const messageText = Array.isArray(msgs) ? msgs.join(" ") : msgs;
+            return `${field}: ${messageText}`;
+          })
+          .join(" | ");
+
+        errorText = formattedErrors || "Signup failed.";
+      }
+
       setApiMessage({
         type: "error",
-        text: "Real network connectivity error occurred.",
+        text: errorText,
       });
+
       console.error(error);
     }
   }
