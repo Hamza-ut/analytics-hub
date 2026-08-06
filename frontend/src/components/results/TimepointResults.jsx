@@ -89,7 +89,7 @@ export function TimepointResults({
 
       {/* 2. FILTER BUTTONS */}
       <div style={styles.filterBar}>
-        <strong style={{ fontSize: "14px" }}>Filter Condition:</strong>
+        <strong style={{ fontSize: "14px" }}>Filter Groups:</strong>
         {conditions.map((cond) => (
           <button
             key={cond}
@@ -110,7 +110,7 @@ export function TimepointResults({
           <thead>
             <tr style={styles.tableHeader}>
               <th style={styles.th}>Rank</th>
-              <th style={styles.th}>Condition</th>
+              <th style={styles.th}>Group Field/s</th>
               <th style={styles.th}>Ideal Time Window</th>
               <th style={styles.th}>Composite Score</th>
               <th style={styles.th}>CV</th>
