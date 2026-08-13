@@ -1,5 +1,5 @@
-from .models import File
 from django.contrib import admin
+from .models import File
 
 
 # To register the File model with the admin site and customize its display
@@ -17,10 +17,13 @@ class FileAdmin(admin.ModelAdmin):
 
     def delete_queryset(self, request, queryset):
         for obj in queryset:
-            if obj.projects.exists():
-                raise ValidationError(
-                    f"Cannot delete {obj}: it is used by a project."
+            if obj.timepoint_runs.exists():
+                self.message_user(
+                    request,
+                    f"Cannot delete '{obj.original_filename}': it is used by a project.",
+                    level="error",
                 )
+                return
         queryset.delete()
 
 

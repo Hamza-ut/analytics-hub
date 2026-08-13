@@ -9,7 +9,7 @@ def generate_upload_id():
 
 
 def upload_file_path(instance, filename):
-    return f"{instance.upload_id}/{filename}"
+    return f"input/{instance.upload_id}/{filename}"
 
 
 class File(models.Model):
@@ -26,7 +26,7 @@ class File(models.Model):
         default=generate_upload_id,
         editable=False,
     )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="files")
     file = models.FileField(upload_to=upload_file_path)
     original_filename = models.TextField()
     file_size = models.BigIntegerField(null=True, blank=True)
@@ -37,7 +37,7 @@ class File(models.Model):
     md5 = models.CharField(max_length=64, null=True, blank=True)
 
     def delete(self, *args, **kwargs):
-        if self.projects.exists():
+        if self.timepoint_runs.exists():
             raise ValidationError(
                 "Cannot delete file: it is used by one or more projects."
             )

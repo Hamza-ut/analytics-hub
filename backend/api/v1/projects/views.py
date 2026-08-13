@@ -1,171 +1,81 @@
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.decorators import (
-    api_view,
-    authentication_classes,
-    permission_classes,
-)
-
-from .serializers import PipelineSerializer, ProjectRunSerializer
-
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.db import transaction
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
 
-from projects.models import Pipeline, ProjectRun
-from projects.utils import is_stuck
-from projects.tasks import run_timepoint, run_sequence
-
-
-@api_view(["POST"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def project_create(request):
-    serializer = ProjectRunSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from .serializers import WorkflowSerializer, ProjectSerializer
+from projects.models import Workflow, Project
 
 
-@api_view(["POST"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def project_run(request, project_id):
-    project = get_object_or_404(ProjectRun, project_id=project_id)
+class WorkflowList(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    if project.user != request.user and not request.user.is_superuser:
-        return Response(
-            {"detail": "Not authorized to run this project."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
-    if project.status in ["QUEUED", "RUNNING"] and not is_stuck(project):
-        return Response(
-            {"message": "Project is already running."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    with transaction.atomic():
-        if hasattr(project, "timepoint_result"):
-            project.timepoint_result.delete()
-
-        project.status = "QUEUED"
-        project.error_message = None
-        project.slurm_job_id = None
-        project.started_at = None
-        project.completed_at = None
-        project.save()
-
-        def queue_task():
-            try:
-                pipeline_name = project.pipeline.pipeline_name
-                if pipeline_name == "TIMEPOINT":
-                    run_timepoint.delay(project.id)
-                elif pipeline_name == "STRAIN_QC":
-                    run_sequence.delay(project.id)
-                else:
-                    project.status = "FAILED"
-                    project.error_message = (
-                        f"No task handler for pipeline '{pipeline_name}'."
-                    )
-                    project.save()
-            except Exception:
-                project.status = "FAILED"
-                project.error_message = "Could not connect to Redis. Task not queued."
-                project.save()
-
-        transaction.on_commit(queue_task)
-
-    return Response({"status": "QUEUED", "message": "Project execution started."})
+    def get(self, request):
+        try:
+            workflows = Workflow.objects.all()
+            serializer = WorkflowSerializer(workflows, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception:
+            return Response(
+                {"error": "An unexpected error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
-@api_view(["GET"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def project_result(request, project_id):
-    project = get_object_or_404(ProjectRun, project_id=project_id, user=request.user)
+class CreateProject(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    if project.pipeline.pipeline_name == "TIMEPOINT":
-        if hasattr(project, "timepoint_result"):
-            raw_results = project.timepoint_result.result_json or []
-            reshaped = [
+    def post(self, request):
+        serializer = ProjectSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
                 {
-                    "rank": entry.get("rank"),
-                    "ideal_time_window": entry.get("ideal_time_window"),
-                    "condition": entry.get("condition"),
-                    "composite_score": round(entry.get("composite_score", 0), 4),
-                    "details": {
-                        "cv": entry.get("cv"),
-                        "snr": entry.get("snr"),
-                        "correlation": entry.get("correlation"),
-                    },
-                }
-                for entry in raw_results
-            ]
-            return Response(reshaped, status=status.HTTP_200_OK)
-        return Response(
-            {"error": "Results not ready."}, status=status.HTTP_404_NOT_FOUND
-        )
-
-    return Response(
-        {"error": "Pipeline not supported for results yet."},
-        status=status.HTTP_400_BAD_REQUEST,
-    )
-
-
-@api_view(["GET", "DELETE"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def project_detail(request, project_id):
-    project = get_object_or_404(ProjectRun, project_id=project_id)
-
-    if project.user != request.user and not request.user.is_superuser:
-        return Response(
-            {"detail": "You do not have permission to access this project."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
-    if request.method == "GET":
-        return Response(ProjectRunSerializer(project).data)
-
-    if request.method == "DELETE":
-        if not request.user.is_superuser:
-            return Response(
-                {"detail": "Only administrators can delete projects."},
-                status=status.HTTP_403_FORBIDDEN,
+                    "message": "Project created successfully.",
+                    "project_id": serializer.data["project_id"],
+                },
+                status=status.HTTP_201_CREATED,
             )
-        if project.status == "RUNNING":
-            return Response(
-                {"error": "Cannot delete a running project."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProjectDetail(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, project_id, user):
+        project = get_object_or_404(Project, project_id=project_id)
+        if project.user != user and not user.is_superuser:
+            raise PermissionDenied("You do not have permission to access this project.")
+        return project
+
+    def get(self, request, project_id):
+        project = self.get_object(project_id, request.user)
+        return Response(ProjectSerializer(project).data)
+
+    def delete(self, request, project_id):
+        project = self.get_object(project_id, request.user)
         project.delete()
         return Response(
-            {"message": "Project deleted."}, status=status.HTTP_204_NO_CONTENT
+            {"message": f"Project {project_id} deleted successfully."},
+            status=status.HTTP_200_OK,
         )
 
 
-@api_view(["GET"])
-@authentication_classes([TokenAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def projects_list(request):
-    if request.user.is_superuser:
+class ProjectsList(APIView):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
         projects = (
-            ProjectRun.objects.all().select_related("user").prefetch_related("files")
+            Project.objects.all()
+            if request.user.is_superuser
+            else Project.objects.filter(user=request.user)
         )
-    else:
-        projects = (
-            ProjectRun.objects.filter(user=request.user)
-            .select_related("user")
-            .prefetch_related("files")
-        )
-    return Response(ProjectRunSerializer(projects, many=True).data)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def pipelines_list(request):
-    pipelines = Pipeline.objects.filter(is_active=True)
-    return Response(PipelineSerializer(pipelines, many=True).data)
+        serializer = ProjectSerializer(projects.order_by("-created_at"), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

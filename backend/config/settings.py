@@ -45,8 +45,8 @@ INSTALLED_APPS = [
     # YOUR APPS WILL COME HERE
     "accounts",
     "uploads",
-    "dashboard",
     "projects",
+    "workflows.timepoint",
     # moving to rest framework for API endpoints
     "rest_framework",
     "rest_framework.authtoken",
@@ -158,6 +158,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 
+# EXECUTOR BACKEND CONFIGURATION ("localserver", "hpc", or "cloud")
+EXECUTOR_BACKEND = os.getenv("EXECUTOR_BACKEND", "localserver")
+
 # CELERY CONFIGURATION
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
@@ -166,12 +169,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
-CELERY_BEAT_SCHEDULE = {
-    "poll-hpc-jobs": {
-        "task": "projects.tasks.poll_hpc_jobs",
-        "schedule": 30.0,  # every 30 seconds
-    },
-}
+CELERY_BEAT_SCHEDULE = {}
 
 
 CORS_ALLOWED_ORIGINS = [

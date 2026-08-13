@@ -8,7 +8,7 @@ export async function fetchProjectResults(token, projectId) {
   try {
     const response = await axios({
       method: "GET",
-      url: `${API_BASE_URL}/projects/results/${projectId}/`,
+      url: `${API_BASE_URL}/workflows/timepoint/results/${projectId}/`,
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",

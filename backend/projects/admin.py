@@ -1,24 +1,23 @@
 from django.contrib import admin
-from .models import Pipeline, ProjectRun
+from .models import Project, Workflow
 
 
-@admin.register(Pipeline)
-class PipelineAdmin(admin.ModelAdmin):
-    list_display = ("pipeline_name", "display_name", "is_active")
+@admin.register(Workflow)
+class WorkflowAdmin(admin.ModelAdmin):
+    list_display = ("workflow_id", "name", "display_name", "is_active")
 
 
-@admin.register(ProjectRun)
-class ProjectRunAdmin(admin.ModelAdmin):
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
     list_display = (
         "project_id",
-        "pipeline",
+        "workflow",
         "status",
-        "slurm_job_id",
         "user",
         "created_at",
         "started_at",
         "completed_at",
-        "error_message",
+        "duration",
     )
-    search_fields = ("project_id", "status", "user__username")
-    list_filter = ("status", "pipeline", "created_at")
+    list_filter = ("status", "workflow", "user")
+    search_fields = ("project_id", "workflow__display_name", "user__username")

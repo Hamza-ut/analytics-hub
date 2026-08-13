@@ -1,16 +1,16 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import Timepoint from "../components/projects/Timepoint";
-import { getPipelines } from "../api/pipelines";
+import { getPipelines } from "../api/workflows";
 
 export default function Project() {
   const { token } = useContext(AuthContext);
-  const [pipelines, setPipelines] = useState([]);
-  const [selectedPipeline, setSelectedPipeline] = useState(null);
+  const [workflows, setWorkflows] = useState([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
 
   useEffect(() => {
     if (token) {
-      getPipelines(token).then((data) => setPipelines(data));
+      getPipelines(token).then((data) => setWorkflows(data));
     }
   }, [token]);
 
@@ -22,15 +22,15 @@ export default function Project() {
         Create New Project
       </h2>
 
-      {/* --- PIPELINE SELECTION BUTTONS --- */}
+      {/* --- WORKFLOW SELECTION BUTTONS --- */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        {pipelines.map((pipeline) => {
-          const isActive = selectedPipeline === pipeline.pipeline_name;
+        {workflows.map((workflow) => {
+          const isActive = selectedWorkflow === workflow.workflow_name;
 
           return (
             <button
-              key={pipeline.id}
-              onClick={() => setSelectedPipeline(pipeline.pipeline_name)}
+              key={workflow.id}
+              onClick={() => setSelectedWorkflow(workflow.workflow_name)}
               style={{
                 padding: "10px 18px",
                 fontSize: "14px",
@@ -43,7 +43,7 @@ export default function Project() {
                 transition: "all 0.15s ease",
               }}
             >
-              {pipeline.display_name}
+              {workflow.display_name}
             </button>
           );
         })}
@@ -58,9 +58,9 @@ export default function Project() {
       />
 
       {/* --- SHOW FORM BASED ON SELECTION --- */}
-      {selectedPipeline === "TIMEPOINT" && <Timepoint />}
+      {selectedWorkflow === "TIMEPOINT" && <Timepoint />}
 
-      {selectedPipeline === "STRAIN_QC" && (
+      {selectedWorkflow === "STRAIN_QC" && (
         <div
           style={{
             padding: "16px",
@@ -69,13 +69,13 @@ export default function Project() {
             color: "#64748b",
           }}
         >
-          Strain QC pipeline under development...
+          Strain QC workflow under development...
         </div>
       )}
 
-      {!selectedPipeline && (
+      {!selectedWorkflow && (
         <p style={{ color: "#64748b", fontSize: "14px" }}>
-          Please select a pipeline above to display its setup form.
+          Please select a workflow above to display its setup form.
         </p>
       )}
     </div>

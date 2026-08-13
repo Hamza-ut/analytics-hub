@@ -54,7 +54,7 @@ export default function Sidebar() {
           </NavLink>
         </div>
 
-        {/* GROUP 2: UPLOADS & PIPELINES */}
+        {/* GROUP 2: UPLOADS & WORKFLOWS */}
         <div>
           <div
             style={{
@@ -66,15 +66,15 @@ export default function Sidebar() {
               paddingLeft: "8px",
             }}
           >
-            DATA & PIPELINES
+            DATA & WORKFLOWS
           </div>
 
           <NavLink to="/uploads" style={linkStyle}>
             📁 <span>Data Manager</span>
           </NavLink>
 
-          <NavLink to="/pipelines" style={linkStyle}>
-            🛠️ <span>Pipelines</span>
+          <NavLink to="/workflows" style={linkStyle}>
+            🛠️ <span>Workflows</span>
           </NavLink>
         </div>
       </nav>

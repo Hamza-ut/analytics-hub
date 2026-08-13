@@ -17,7 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Project from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
-import Pipeline from "./pages/Pipeline";
+import Pipeline from "./pages/Workflows";
 
 function AppLayout() {
   const { token } = useContext(AuthContext);
@@ -80,7 +80,7 @@ export default function App() {
 
             {/* Uploads & Pipelines */}
             <Route path="/uploads" element={<Upload />} />
-            <Route path="/pipelines" element={<Pipeline />} />
+            <Route path="/workflows" element={<Pipeline />} />
             {/* Timepoint Results Route */}
             <Route
               path="/projects/:projectId/results"
