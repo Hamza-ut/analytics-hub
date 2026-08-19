@@ -1,16 +1,16 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../contexts/AuthContext";
-import Timepoint from "../components/projects/Timepoint";
-import { getPipelines } from "../api/workflows";
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import Timepoint from "../components/workflows/Timepoint";
+import { getWorkflows } from "../api/workflows";
 
 export default function Project() {
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
   const [workflows, setWorkflows] = useState([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
 
   useEffect(() => {
     if (token) {
-      getPipelines(token).then((data) => setWorkflows(data));
+      getWorkflows(token).then((data) => setWorkflows(data));
     }
   }, [token]);
 
@@ -25,12 +25,12 @@ export default function Project() {
       {/* --- WORKFLOW SELECTION BUTTONS --- */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         {workflows.map((workflow) => {
-          const isActive = selectedWorkflow === workflow.workflow_name;
+          const isActive = selectedWorkflow === workflow.display_name;
 
           return (
             <button
               key={workflow.id}
-              onClick={() => setSelectedWorkflow(workflow.workflow_name)}
+              onClick={() => setSelectedWorkflow(workflow.display_name)}
               style={{
                 padding: "10px 18px",
                 fontSize: "14px",
@@ -58,9 +58,9 @@ export default function Project() {
       />
 
       {/* --- SHOW FORM BASED ON SELECTION --- */}
-      {selectedWorkflow === "TIMEPOINT" && <Timepoint />}
+      {selectedWorkflow === "DRC Optimal Timepoint" && <Timepoint />}
 
-      {selectedWorkflow === "STRAIN_QC" && (
+      {selectedWorkflow === "Strain QC Analysis" && (
         <div
           style={{
             padding: "16px",

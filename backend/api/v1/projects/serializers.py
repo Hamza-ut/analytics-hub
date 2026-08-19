@@ -22,11 +22,16 @@ class ProjectSerializer(serializers.ModelSerializer):
     # It is used for read-only fields, which is suitable for displaying data in API responses.
     username = serializers.ReadOnlyField(source="user.username")
 
-    # Option B, use slug field when you are writing, even though we are writing to projects table but we are using the workflow name as reference to the workflow table
+    # Accept the internal name slug on write (e.g. "drctimepoint"), return display_name on read
     workflow = serializers.SlugRelatedField(
         slug_field="name",
         queryset=Workflow.objects.filter(is_active=True),
     )
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["workflow"] = instance.workflow.display_name if instance.workflow else None
+        return rep
 
     class Meta:
         model = Project

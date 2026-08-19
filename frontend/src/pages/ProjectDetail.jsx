@@ -1,24 +1,22 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { getProjectDetail } from "../api/projects";
-// 1. Import your newly created TimepointResults component
 import { TimepointResults } from "../components/results/TimepointResults";
 
 export default function ProjectDetail() {
   const { projectId } = useParams();
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function fetchProjectData() {
-    const data = await getProjectDetail(token, projectId);
-    setProject(data);
-    setLoading(false);
-  }
-
   useEffect(() => {
+    async function fetchProjectData() {
+      const data = await getProjectDetail(token, projectId);
+      setProject(data);
+      setLoading(false);
+    }
     if (token && projectId) {
       fetchProjectData();
     }
@@ -27,56 +25,120 @@ export default function ProjectDetail() {
   if (loading) return <p>Loading project details...</p>;
   if (!project) return <p>Project not found.</p>;
 
+  const isCompleted =
+    project.status === "COMPLETED" || project.status === "SUCCESS";
+  const isFailed =
+    project.status === "FAILED" || project.status === "ERROR";
+
   return (
     <div style={{ padding: "20px" }}>
-      <Link to="/projects">← Back to Projects</Link>
+      <Link to="/projects" style={{ color: "#2563eb", textDecoration: "none" }}>
+        ← Back to Projects
+      </Link>
 
-      <h2>Project: {project.project_id}</h2>
-      <p>
-        <strong>Status:</strong> {project.status}
-      </p>
-
-      {/* CONFIGURATION SECTION */}
-      <div style={{ marginBottom: "20px" }}>
-        <h3>Configuration</h3>
-        <p>
-          <strong>Pipeline:</strong> {project.pipeline}
-        </p>
-        <p>
-          <strong>Group Fields:</strong>{" "}
-          {project.config?.group_fields?.join(", ")}
-        </p>
-        <p>
-          <strong>Dose Field:</strong> {project.config?.dose_field}
-        </p>
-        <p>
-          <strong>OD Field:</strong> {project.config?.od_field}
-        </p>
-        <p>
-          <strong>Time Field:</strong> {project.config?.time_field}
-        </p>
+      {/* GENERIC METADATA SECTION */}
+      <div style={{ marginTop: "20px", marginBottom: "32px" }}>
+        <h2 style={{ marginBottom: "16px" }}>Project Detail</h2>
+        <table style={styles.metaTable}>
+          <tbody>
+            <tr>
+              <td style={styles.metaLabel}>Project ID</td>
+              <td style={styles.metaValue}>{project.project_id}</td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Workflow</td>
+              <td style={styles.metaValue}>{project.workflow}</td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Status</td>
+              <td style={styles.metaValue}>
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    backgroundColor: isCompleted
+                      ? "#dcfce7"
+                      : isFailed
+                        ? "#fee2e2"
+                        : "#f1f5f9",
+                    color: isCompleted
+                      ? "#15803d"
+                      : isFailed
+                        ? "#991b1b"
+                        : "#475569",
+                  }}
+                >
+                  {project.status}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Created</td>
+              <td style={styles.metaValue}>
+                {project.created_at
+                  ? new Date(project.created_at).toLocaleString()
+                  : "—"}
+              </td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Started</td>
+              <td style={styles.metaValue}>
+                {project.started_at
+                  ? new Date(project.started_at).toLocaleString()
+                  : "—"}
+              </td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Completed</td>
+              <td style={styles.metaValue}>
+                {project.completed_at
+                  ? new Date(project.completed_at).toLocaleString()
+                  : "—"}
+              </td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>Duration</td>
+              <td style={styles.metaValue}>{project.duration ?? "—"}</td>
+            </tr>
+            <tr>
+              <td style={styles.metaLabel}>User</td>
+              <td style={styles.metaValue}>{project.username}</td>
+            </tr>
+            {project.error_message && (
+              <tr>
+                <td style={styles.metaLabel}>Error</td>
+                <td style={{ ...styles.metaValue, color: "#991b1b" }}>
+                  {project.error_message}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* FILES SECTION */}
-      <div style={{ marginBottom: "20px" }}>
-        <h3>Attached Datasets</h3>
-        <ul>
-          {project.files?.map(function (file) {
-            return (
-              <li key={file.upload_id}>
-                {file.original_filename} ({file.upload_id})
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <hr style={{ margin: "24px 0", borderColor: "#e2e8f0" }} />
 
-      <hr style={{ margin: "24px 0" }} />
-
-      {/* 2. RESULTS SECTION */}
+      {/* WORKFLOW-SPECIFIC RESULTS SECTION */}
       <div>
-        {project.status === "COMPLETED" || project.status === "SUCCESS" ? (
+        <h3 style={{ marginBottom: "16px" }}>Analysis Results</h3>
+        {isCompleted ? (
           <TimepointResults projectId={projectId} authToken={token} />
+        ) : isFailed ? (
+          <div
+            style={{
+              padding: "16px",
+              background: "#fee2e2",
+              borderRadius: "8px",
+              color: "#991b1b",
+            }}
+          >
+            <strong>Analysis failed.</strong>
+            {project.error_message && (
+              <p style={{ marginTop: "8px" }}>{project.error_message}</p>
+            )}
+          </div>
         ) : (
           <div
             style={{
@@ -93,3 +155,24 @@ export default function ProjectDetail() {
     </div>
   );
 }
+
+const styles = {
+  metaTable: {
+    borderCollapse: "collapse",
+    width: "100%",
+    maxWidth: "600px",
+  },
+  metaLabel: {
+    padding: "8px 16px 8px 0",
+    color: "#64748b",
+    fontWeight: "600",
+    fontSize: "14px",
+    width: "160px",
+    verticalAlign: "top",
+  },
+  metaValue: {
+    padding: "8px 0",
+    color: "#0f172a",
+    fontSize: "14px",
+  },
+};

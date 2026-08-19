@@ -1,5 +1,5 @@
-import { useContext, useState, useEffect } from "react";
-import { AuthContext } from "../contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import FileUploadForm from "../components/uploads/FileUploadForm";
 
 // helper functions
@@ -7,7 +7,7 @@ import { formatBytes, formatDate } from "../utils/formatters";
 import { getUploadedFiles, downloadFile, deleteFile } from "../api/files";
 
 export default function Upload() {
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
   const [files, setFiles] = useState([]);
   const [status, setStatus] = useState(null);
 

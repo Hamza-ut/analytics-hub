@@ -1,18 +1,22 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/formatters";
-import { getCreatedProjects, runProject, deleteProject } from "../api/projects";
+import {
+  getProjectsList,
+  runTimepointProject,
+  deleteProject,
+} from "../api/projects";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null); // Track pending operations
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
 
   async function fetchProjects() {
     try {
-      const data = await getCreatedProjects(token);
+      const data = await getProjectsList(token);
       setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -30,7 +34,7 @@ export default function Dashboard() {
   // Handle Project Execution
   const handleRun = async (projectId) => {
     setActionLoadingId(projectId);
-    const result = await runProject(token, projectId);
+    const result = await runTimepointProject(token, projectId);
     if (result) {
       // Refresh list to update status pill (CREATED -> RUNNING/COMPLETED)
       await fetchProjects();
@@ -108,10 +112,9 @@ export default function Dashboard() {
               }}
             >
               <th style={{ padding: "12px" }}>Project ID</th>
-              <th style={{ padding: "12px" }}>Pipeline</th>
+              <th style={{ padding: "12px" }}>Workflow</th>
               <th style={{ padding: "12px" }}>Created</th>
               <th style={{ padding: "12px" }}>User</th>
-              <th style={{ padding: "12px" }}>Associated Files</th>
               <th style={{ padding: "12px" }}>Status</th>
               <th style={{ padding: "12px" }}>Action</th>
             </tr>
@@ -134,18 +137,11 @@ export default function Dashboard() {
                     {proj.project_id}
                   </Link>
                 </td>
-                <td style={{ padding: "12px" }}>
-                  {proj.pipeline_display_name || proj.pipeline}
-                </td>
+                <td style={{ padding: "12px" }}>{proj.workflow}</td>
                 <td style={{ padding: "12px" }}>
                   {formatDate(proj.created_at)}
                 </td>
-                <td style={{ padding: "12px" }}>{proj.user}</td>
-                <td style={{ padding: "12px" }}>
-                  {Array.isArray(proj.files) && proj.files.length > 0
-                    ? proj.files.map((f) => f.original_filename || f).join(", ")
-                    : "No files"}
-                </td>
+                <td style={{ padding: "12px" }}>{proj.username}</td>
                 <td style={{ padding: "12px" }}>
                   <span
                     style={{

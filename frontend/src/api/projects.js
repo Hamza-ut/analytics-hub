@@ -44,7 +44,7 @@ export async function getProjectDetail(token, projectId) {
 }
 
 // fetch all projects created by the user
-export async function getCreatedProjects(token) {
+export async function getProjectsList(token) {
   if (!token) return [];
   try {
     const response = await axios({
@@ -54,24 +54,24 @@ export async function getCreatedProjects(token) {
     });
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch files:", error);
+    console.error("Failed to fetch projects:", error);
     return []; // Returns empty array so .map() doesn't break
   }
 }
 
-// Run the project with the given project ID
-export async function runProject(token, projectId) {
+// Run the timepoint project with the given project ID
+export async function runTimepointProject(token, projectId) {
   if (!token || !projectId) return null;
   try {
     const response = await axios({
       method: "POST",
-      url: `${API_BASE_URL}/projects/run/${projectId}/`,
+      url: `${API_BASE_URL}/workflows/timepoint/execute/${projectId}/`,
       headers: { Authorization: `Token ${token}` },
     });
     return response.data;
   } catch (error) {
     if (error.response) {
-      console.error("Failed to run project:", error.response.data);
+      console.error("Failed to run timepoint project:", error.response.data);
     } else {
       console.error("Network Error:", error.message);
     }

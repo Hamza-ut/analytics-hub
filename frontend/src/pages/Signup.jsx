@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { API_BASE_URL } from "../api/config";
 import axios from "axios";
 
-
 export default function Signup() {
   const {
     register,
@@ -20,11 +19,10 @@ export default function Signup() {
       setApiMessage(null);
 
       const response = await axios({
-        method: "POST", 
-        url: `${API_BASE_URL}/accounts/signup/`, 
+        method: "POST",
+        url: `${API_BASE_URL}/accounts/signup/`,
         data: myData,
         timeout: 3000,
-      
       });
 
       // SUCCESS: Runs when Django returns 201 CREATED
@@ -34,7 +32,6 @@ export default function Signup() {
       });
 
       reset();
-
     } catch (error) {
       let errorText = "Cannot connect to server. Is backend running?";
       if (error.response) {

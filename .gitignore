@@ -60,3 +60,5 @@ Thumbs.db
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+react_learn

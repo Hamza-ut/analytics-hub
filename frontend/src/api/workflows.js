@@ -1,8 +1,8 @@
 import { API_BASE_URL } from "../api/config";
 import axios from "axios";
 
-// fetches pipelines list
-export async function getPipelines(token) {
+// fetches workflows list
+export async function getWorkflows(token) {
   if (!token) return [];
   try {
     const response = await axios({

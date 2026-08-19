@@ -1,11 +1,11 @@
 // FileUploadForm.jsx
-import { useState, useContext } from "react";
+import { useState } from "react";
 import axios from "axios";
-import { AuthContext } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../api/config";
 
 export default function FileUploadForm({ onUploadSuccess }) {
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
   const [selectedFile, setSelectedFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);

@@ -1,29 +1,37 @@
-import React, { useEffect, useState, useContext } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { AuthContext } from "../../contexts/AuthContext";
-import { fetchProjectResults } from "../../api/results";
+import { useAuth } from "../../contexts/AuthContext";
+import { fetchTimepointConfig, fetchTimepointResults } from "../../api/results";
 
 export function TimepointResults({
   projectId: propProjectId,
   authToken: propToken,
 }) {
-  // Support either props OR route params/context automatically
+  // Support either props (from ProjectDetail) OR route params/context (standalone route)
   const params = useParams();
-  const context = useContext(AuthContext);
+  const context = useAuth();
 
   const projectId = propProjectId || params.projectId;
   const token = propToken || context?.token;
 
   const [results, setResults] = useState([]);
+  const [resultsMeta, setResultsMeta] = useState(null);
+  const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCondition, setSelectedCondition] = useState("ALL");
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await fetchProjectResults(token, projectId);
-      if (Array.isArray(data)) {
-        setResults(data);
+      const [configData, resultsData] = await Promise.all([
+        fetchTimepointConfig(token, projectId),
+        fetchTimepointResults(token, projectId),
+      ]);
+      setConfig(configData);
+      // Results come back as { id, result_json: [...], ran_at, filename, ... }
+      if (resultsData && Array.isArray(resultsData.result_json)) {
+        setResults(resultsData.result_json);
+        setResultsMeta({ ran_at: resultsData.ran_at, filename: resultsData.filename });
       } else {
         setResults([]);
       }
@@ -35,59 +43,95 @@ export function TimepointResults({
     }
   }, [token, projectId]);
 
+  // Group fields are dynamic — each one is its own column in the result row.
+  // We find ALL keys that aren't known metrics, then join their values for display.
+  const KNOWN_KEYS = new Set([
+    "cv", "snr", "rank", "smoothness", "correlation",
+    "dynamic_range", "composite_score", "ideal_time_window",
+  ]);
+  const conditionKeys =
+    results.length > 0
+      ? Object.keys(results[0]).filter((k) => !KNOWN_KEYS.has(k))
+      : [];
+
+  const getLabel = (row) => conditionKeys.map((k) => row[k]).join(" | ");
+
   if (loading) {
-    return (
-      <div style={styles.paddingContainer}>Loading pipeline results...</div>
-    );
+    return <div style={styles.paddingContainer}>Loading pipeline results...</div>;
   }
 
-  if (!results || results.length === 0) {
-    return (
-      <div style={styles.paddingContainer}>
-        No results found for this project.
-      </div>
-    );
+  if (results.length === 0) {
+    return <div style={styles.paddingContainer}>No results found for this project.</div>;
   }
 
-  // Extract unique list of conditions for filter buttons
   const conditions = [
     "ALL",
-    ...Array.from(new Set(results.map((r) => r.condition).filter(Boolean))),
+    ...Array.from(new Set(results.map((r) => getLabel(r)).filter(Boolean))),
   ];
 
-  // Filter dataset by condition
   const filteredResults =
     selectedCondition === "ALL"
       ? results
-      : results.filter((r) => r.condition === selectedCondition);
+      : results.filter((r) => getLabel(r) === selectedCondition);
 
-  // Grab Rank #1 items across conditions for highlight cards
   const topRankings = results.filter((r) => r.rank === 1);
 
   return (
     <div style={styles.container}>
-      {/* 1. TOP HIGHLIGHTS */}
+
+      {/* CONFIG SUMMARY */}
+      {config && (
+        <div style={styles.configBox}>
+          <h4 style={styles.configTitle}>Run Configuration</h4>
+          <div style={styles.configGrid}>
+            <div>
+              <span style={styles.configLabel}>File</span>
+              {resultsMeta?.filename || config.file}
+            </div>
+            <div>
+              <span style={styles.configLabel}>Group Fields</span>
+              {config.group_fields?.join(", ")}
+            </div>
+            <div>
+              <span style={styles.configLabel}>Dose Field</span>
+              {config.dose_field}
+            </div>
+            <div>
+              <span style={styles.configLabel}>OD Field</span>
+              {config.od_field}
+            </div>
+            <div>
+              <span style={styles.configLabel}>Time Field</span>
+              {config.time_field}
+            </div>
+            {resultsMeta?.ran_at && (
+              <div>
+                <span style={styles.configLabel}>Ran At</span>
+                {new Date(resultsMeta.ran_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TOP HIGHLIGHTS */}
       <h3 style={styles.header}>Top Recommended Time Windows</h3>
       <div style={styles.cardGrid}>
         {topRankings.map((item, idx) => (
           <div key={idx} style={styles.card}>
-            <div style={styles.cardTag}>{item.condition}</div>
-            <div style={styles.cardWindow}>{item.ideal_time_window} </div>
+            <div style={styles.cardTag}>{getLabel(item)}</div>
+            <div style={styles.cardWindow}>{item.ideal_time_window}</div>
             <div style={styles.cardScore}>
-              Score:{" "}
-              <strong>{((item.composite_score || 0) * 100).toFixed(1)}%</strong>
+              Score: <strong>{((item.composite_score || 0) * 100).toFixed(1)}%</strong>
             </div>
-            {item.details && (
-              <div style={styles.cardSubtext}>
-                SNR: {item.details.snr?.toFixed(2)} | Corr:{" "}
-                {item.details.correlation?.toFixed(2)}
-              </div>
-            )}
+            <div style={styles.cardSubtext}>
+              SNR: {item.snr?.toFixed(2)} | Corr: {item.correlation?.toFixed(2)}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* 2. FILTER BUTTONS */}
+      {/* FILTER BUTTONS */}
       <div style={styles.filterBar}>
         <strong style={{ fontSize: "14px" }}>Filter Groups:</strong>
         {conditions.map((cond) => (
@@ -104,13 +148,13 @@ export function TimepointResults({
         ))}
       </div>
 
-      {/* 3. MAIN DATA TABLE */}
+      {/* MAIN DATA TABLE */}
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
             <tr style={styles.tableHeader}>
               <th style={styles.th}>Rank</th>
-              <th style={styles.th}>Group Field/s</th>
+              <th style={styles.th}>Group</th>
               <th style={styles.th}>Ideal Time Window</th>
               <th style={styles.th}>Composite Score</th>
               <th style={styles.th}>CV</th>
@@ -128,26 +172,20 @@ export function TimepointResults({
                 }}
               >
                 <td style={styles.td}>
-                  <span
-                    style={
-                      row.rank === 1 ? styles.badgeRankOne : styles.badgeRank
-                    }
-                  >
+                  <span style={row.rank === 1 ? styles.badgeRankOne : styles.badgeRank}>
                     #{row.rank}
                   </span>
                 </td>
                 <td style={styles.td}>
-                  <strong>{row.condition}</strong>
+                  <strong>{getLabel(row)}</strong>
                 </td>
                 <td style={styles.td}>{row.ideal_time_window}</td>
                 <td style={styles.td}>
                   {((row.composite_score || 0) * 100).toFixed(2)}%
                 </td>
-                <td style={styles.td}>{row.details?.cv?.toFixed(4) ?? "-"}</td>
-                <td style={styles.td}>{row.details?.snr?.toFixed(3) ?? "-"}</td>
-                <td style={styles.td}>
-                  {row.details?.correlation?.toFixed(4) ?? "-"}
-                </td>
+                <td style={styles.td}>{row.cv?.toFixed(4) ?? "-"}</td>
+                <td style={styles.td}>{row.snr?.toFixed(3) ?? "-"}</td>
+                <td style={styles.td}>{row.correlation?.toFixed(4) ?? "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -160,6 +198,35 @@ export function TimepointResults({
 const styles = {
   container: { fontFamily: "sans-serif", marginTop: "16px" },
   paddingContainer: { padding: "20px", color: "#64748b", textAlign: "center" },
+
+  configBox: {
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    padding: "16px 20px",
+    marginBottom: "24px",
+  },
+  configTitle: {
+    margin: "0 0 12px 0",
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#475569",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+  },
+  configGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+    gap: "8px",
+    fontSize: "13px",
+    color: "#334155",
+  },
+  configLabel: {
+    fontWeight: "600",
+    color: "#64748b",
+    marginRight: "6px",
+  },
+
   header: { margin: "0 0 12px 0", fontSize: "18px", color: "#0f172a" },
   cardGrid: {
     display: "grid",

@@ -1,10 +1,9 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { API_BASE_URL } from "../api/config";
 import axios from "axios";
-
 
 export default function Login() {
   const {
@@ -15,7 +14,7 @@ export default function Login() {
 
   const [apiMessage, setApiMessage] = useState(null);
 
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   async function onSubmit(myData) {
@@ -23,15 +22,14 @@ export default function Login() {
       setApiMessage(null);
 
       const response = await axios({
-      method: "POST",
-      url: `${API_BASE_URL}/accounts/login/`,
-      data: myData,
-      timeout: 1000,
-    });
-    
-    login(response.data.token);
-    navigate("/");
+        method: "POST",
+        url: `${API_BASE_URL}/accounts/login/`,
+        data: myData,
+        timeout: 1000,
+      });
 
+      login(response.data.token);
+      navigate("/");
     } catch (error) {
       let errorText = "Cannot connect to server. Is backend running?";
 
@@ -50,7 +48,7 @@ export default function Login() {
         type: "error",
         text: errorText,
       });
-      
+
       console.error(error);
     }
   }

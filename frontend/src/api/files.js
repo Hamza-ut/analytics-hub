@@ -1,6 +1,23 @@
 import { API_BASE_URL } from "../api/config";
 import axios from "axios";
 
+// create config for project creation
+export async function TimepointRunConfigure(token, myData) {
+  const { projectId, ...bodyData } = myData;
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${API_BASE_URL}/workflows/timepoint/config/${projectId}/`,
+      headers: { Authorization: `Token ${token}` },
+      data: bodyData,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to configure timepoint run:", error);
+    throw error;
+  }
+}
+
 // fetches files list
 export async function getUploadedFiles(token) {
   if (!token) return [];
@@ -23,7 +40,7 @@ export async function downloadFile(token, uploadId) {
   try {
     const response = await axios({
       method: "GET",
-      url: `${API_BASE_URL}/uploads/file/${uploadId}/?download=true`,
+      url: `${API_BASE_URL}/uploads/file/${uploadId}/download/`,
       headers: { Authorization: `Token ${token}` },
       responseType: "blob",
     });

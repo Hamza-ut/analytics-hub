@@ -1,15 +1,15 @@
 // src/components/projects/Timepoint.jsx
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../../contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 // helper functions
-import { getUploadedFiles } from "../../api/files";
+import { TimepointRunConfigure, getUploadedFiles } from "../../api/files";
 import { createProject } from "../../api/projects";
 
 export default function Timepoint() {
   const navigate = useNavigate();
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
   const [files, setFiles] = useState([]);
   const [status, setStatus] = useState(null);
 
@@ -53,50 +53,37 @@ export default function Timepoint() {
     e.preventDefault();
     setStatus(null);
 
-    // Split comma-separated string into clean array of trimmed strings
     const groupList = formData.group_fields
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
 
-    // Construct the payload expected by Django backend
-    const myData = {
-      pipeline: "TIMEPOINT",
-      // Pass fileId directly as a string (e.g., ["upl_2c4f9c"])
-      files: formData.fileId ? [formData.fileId] : [],
-      config: {
+    // Step 1: create the project
+    const project = await createProject(token, { workflow: "drctimepoint" });
+    if (!project) {
+      setStatus({ type: "error", message: "Failed to create project." });
+      return;
+    }
+
+    // Step 2: configure timepoint using the project_id from step 1
+    try {
+      await TimepointRunConfigure(token, {
+        projectId: project.project_id,
+        file: formData.fileId,
         group_fields: groupList,
         dose_field: formData.dose_field,
         od_field: formData.od_field,
         time_field: formData.time_field,
-      },
-    };
-
-    const result = await createProject(token, myData);
-
-    if (result && result.project_id) {
+        top_n: 2,
+      });
       setStatus({
         type: "success",
-        message: `Project created successfully! (ID: ${result.project_id}) Redirecting...`,
+        message: "Project created! Redirecting...",
       });
-
-      // Reset form fields
-      setFormData({
-        fileId: "",
-        group_fields: "",
-        dose_field: "",
-        od_field: "",
-        time_field: "",
-      });
-    } else {
-      setStatus({
-        type: "error",
-        message: "Failed to create project. Check server logs.",
-      });
+      setTimeout(() => navigate("/projects"), 1500);
+    } catch (error) {
+      setStatus({ type: "error", message: "Failed to configure timepoint." });
     }
-    setTimeout(() => {
-      navigate("/projects"); // Navigate to projects list
-    }, 1500);
   }
 
   return (

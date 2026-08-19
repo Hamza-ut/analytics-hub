@@ -1,12 +1,14 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { useContext } from "react";
-import { AuthContext } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/AuthContext";
+
+// for checking backend status
+import { useBackendStatus } from "./contexts/BackendStatusContext";
 
 // Components
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import PublicOnlyRoute from "./components/PublicOnlyRoute";
-import Timepoint from "./components/projects/Timepoint";
+import Timepoint from "./components/workflows/Timepoint";
 import TimepointResults from "./components/results/TimepointResults";
 
 // Pages
@@ -17,10 +19,12 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Project from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
-import Pipeline from "./pages/Workflows";
+import Workflows from "./pages/Workflows";
+import IgvViewer from "./pages/IgvViewer";
 
+// for protected routes bounce it to login if not logged in
 function AppLayout() {
-  const { token } = useContext(AuthContext);
+  const { token } = useAuth();
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -37,9 +41,25 @@ function AppLayout() {
 }
 
 export default function App() {
+  const { isBackendDown } = useBackendStatus();
+
   return (
     <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
       <Navbar />
+
+      {isBackendDown && (
+        <div
+          style={{
+            backgroundColor: "#fee2e2",
+            color: "#991b1b",
+            padding: "12px 20px",
+            textAlign: "center",
+          }}
+        >
+          Backend is unreachable. Please check your connection or try again
+          later.
+        </div>
+      )}
 
       <main style={{ padding: "20px 0" }}>
         <Routes>
@@ -78,15 +98,18 @@ export default function App() {
             {/* Project Detail Route */}
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
-            {/* Uploads & Pipelines */}
+            {/* Uploads & Workflows */}
             <Route path="/uploads" element={<Upload />} />
-            <Route path="/workflows" element={<Pipeline />} />
+            <Route path="/workflows" element={<Workflows />} />
             {/* Timepoint Results Route */}
             <Route
               path="/projects/:projectId/results"
               element={<TimepointResults />}
             />
           </Route>
+
+          {/* IgvViewer Route */}
+          <Route path="/igv" element={<IgvViewer />} />
 
           {/* 404 Fallback */}
           <Route path="*" element={<h3>404 Not Found</h3>} />

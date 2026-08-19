@@ -1,7 +1,7 @@
 export default function Workflows() {
   return (
     <div>
-      <h5>1: DRC Timepoint Optimization</h5>
+      <h5>1: DRC Optimal Timepoint</h5>
       <p>Identify optimal timepoints for dose-response curve modelling.</p>
 
       <h5>2: Strain QC Analysis</h5>

@@ -76,6 +76,10 @@ export default function Sidebar() {
           <NavLink to="/workflows" style={linkStyle}>
             🛠️ <span>Workflows</span>
           </NavLink>
+
+          <NavLink to="/igv" style={linkStyle}>
+            🔜<span>Test: IGV viewer</span>
+          </NavLink>
         </div>
       </nav>
     </aside>
