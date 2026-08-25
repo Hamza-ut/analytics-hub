@@ -1,0 +1,154 @@
+/* Section Dividers & Headings & Helper Text */
+.sectionDivider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 24px 0;
+}
+.helperText {
+  font-size: 12px;
+  color: #94a3b8; /* Muted slate gray */
+  margin-top: 6px;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+/* Top Run Configuration Box */
+.configBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.configBox h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.configBox p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #313f52; /* Slate gray value text */
+}
+
+.configBox strong {
+  color: #60738e; /* Darker key label */
+  display: inline-block;
+  min-width: 120px; /* Aligns values without needing tables */
+}
+
+/* Card Grid Layout */
+.cardsGrid {
+  display: grid;
+  /* Automatically places cards in columns, wrapping if screen shrinks */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+/* Minimal Summary Card */
+.summaryCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #2563eb; /* Accent blue stripe on the left */
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.cardGroupHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.cardMainMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.timeLabel {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.timeValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.cardSubMetric {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cardSubMetric strong {
+  color: #0eab00;
+}
+
+/* Filter Controls */
+.filterContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.filterBtn {
+  padding: 6px 14px;
+  cursor: pointer;
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ccc;
+  border-radius: 9999px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.filterBtn:hover {
+  border-color: #2563eb;
+}
+.filterBtn.active {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+/* Results Table */
+.resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 14px;
+}
+.resultsTable th {
+  background-color: #ecf1f6;
+  color: #475569;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+.resultsTable td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #576272;
+}
+
+/* Rank Highlights */
+.rank1 {
+  background-color: #dcfce7;
+}
+.rank2 {
+  background-color: #e3fff545;
+}
+.rank3 {
+  background-color: #f0fdf4;
+}

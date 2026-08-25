@@ -1,0 +1,96 @@
+/* Container Layout - fits next to sidebar */
+.container {
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.backLink {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+/* Open, borderless Metadata Header */
+.metaSection {
+  margin-top: 16px;
+  margin-bottom: 32px;
+}
+
+.heading {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.metaSection p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #313f52; /* Plain text value color */
+}
+
+/* Gray key label with fixed width to align values nicely */
+.metaSection strong {
+  color: #60738e;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 130px;
+}
+
+.metaValueError {
+  color: #991b1b;
+}
+
+.divider {
+  margin: 24px 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Status Badges */
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badgeSuccess {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.badgeFailed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badgePending {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Alert Boxes */
+.alertError {
+  padding: 16px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.alertPending {
+  padding: 16px;
+  background-color: #fef3c7;
+  border-radius: 8px;
+  color: #92400e;
+}

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { fetchTimepointConfig, fetchTimepointResults } from "../../api/results";
+import { useAuth } from "../contexts/AuthContext";
+import { fetchTimepointConfig, fetchTimepointResults } from "../api/results";
 
-import styles from "./TimepointResults.module.css";
+import styles from "./Practice.module.css";
 
-export function TimepointResults({ projectId }) {
+export default function Practice() {
   const { token } = useAuth();
+  const projectId = "prj_9c1456";
   const [config, setConfig] = useState(null);
   const [resultsData, setResultsData] = useState(null);
 
@@ -23,7 +24,7 @@ export function TimepointResults({ projectId }) {
     }
   }, [token, projectId]);
 
-  // convert object to array for mapping
+  // Extract the results array cleanly
   const results =
     resultsData?.result_json || (Array.isArray(resultsData) ? resultsData : []);
 
@@ -51,26 +52,28 @@ export function TimepointResults({ projectId }) {
       .join(" | ");
   };
 
-  // Get unique group names ONCE using sets
-  const uniqueGroups = Array.from(
+  const FilterGroupFields = [
+    "ALL",
+    ...Array.from(new Set(results.map((item) => getGroupFields(item)))),
+  ];
+
+  // Find the Rank #1 recommendation for EACH unique group field
+  const topRecommendationsPerGroup = Array.from(
     new Set(results.map((item) => getGroupFields(item))),
-  );
-
-  // Build the filter button array by placing "ALL" in front
-  const FilterGroupFields = ["ALL", ...uniqueGroups];
-
-  // Find Rank #1 for each group (reusing uniqueGroups directly!)
-  const topRecommendationsPerGroup = uniqueGroups
+  )
     .map((groupName) => {
+      // Find all items matching this group
       const groupItems = results.filter(
         (item) => getGroupFields(item) === groupName,
       );
 
+      // Return the item with rank 1 (or default to the first one)
       return (
         groupItems.find((item) => Number(item.rank) === 1) || groupItems[0]
       );
     })
     .filter((item) => {
+      // Respect the active top filter bar selection if one is picked
       if (selectedGroupFilter !== "ALL") {
         return getGroupFields(item) === selectedGroupFilter;
       }
@@ -79,6 +82,8 @@ export function TimepointResults({ projectId }) {
 
   return (
     <div>
+      <h2>Results</h2>
+
       {/* Run Configuration Box */}
       {config && (
         <div className={styles.configBox}>
@@ -104,7 +109,7 @@ export function TimepointResults({ projectId }) {
 
       <div className={styles.sectionDivider} />
       {/* Top Recommended Time Windows (Summary) */}
-      <h3>Ideal Time Window for Dose Response Modelling</h3>
+      <h3>Top Recommended Time Windows</h3>
 
       <div className={styles.cardsGrid}>
         {topRecommendationsPerGroup.map((item, index) => {
@@ -115,7 +120,7 @@ export function TimepointResults({ projectId }) {
               <div className={styles.cardGroupHeader}>{groupFields}</div>
 
               <div className={styles.cardMainMetric}>
-                <span className={styles.timeLabel}>Time window:</span>
+                <span className={styles.timeLabel}>Window:</span>
                 <span className={styles.timeValue}>
                   {item.ideal_time_window}
                 </span>
@@ -204,5 +209,3 @@ export function TimepointResults({ projectId }) {
     </div>
   );
 }
-
-export default TimepointResults;

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "uploads",
     "projects",
     "workflows.timepoint",
+    "workflows.strainqc",
     # moving to rest framework for API endpoints
     "rest_framework",
     "rest_framework.authtoken",

@@ -5,7 +5,7 @@ urlpatterns = [
     path(
         "config/<str:project_id>/",
         views.RunConfigure.as_view(),
-        name="timepoint-config-detail",
+        name="timepoint-config",
     ),
     path(
         "execute/<str:project_id>/",

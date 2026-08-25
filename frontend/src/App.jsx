@@ -21,6 +21,7 @@ import Project from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
 import Workflows from "./pages/Workflows";
 import IgvViewer from "./pages/IgvViewer";
+import Practice from "./learning/Practice";
 
 // for protected routes bounce it to login if not logged in
 function AppLayout() {
@@ -110,6 +111,9 @@ export default function App() {
 
           {/* IgvViewer Route */}
           <Route path="/igv" element={<IgvViewer />} />
+
+          {/* Practice / learning sandbox — no login required */}
+          <Route path="/practice" element={<Practice />} />
 
           {/* 404 Fallback */}
           <Route path="*" element={<h3>404 Not Found</h3>} />

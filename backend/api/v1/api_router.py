@@ -5,4 +5,5 @@ urlpatterns = [
     path("uploads/", include("api.v1.uploads.urls")),
     path("projects/", include("api.v1.projects.urls")),
     path("workflows/timepoint/", include("api.v1.workflows.timepoint.urls")),
+    path("workflows/strainqc/", include("api.v1.workflows.strainqc.urls")),
 ]
