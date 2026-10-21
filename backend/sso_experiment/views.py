@@ -1,6 +1,6 @@
 import secrets
 
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
@@ -12,6 +12,7 @@ from .oidc import (
     exchange_code_for_tokens,
     verify_id_token,
     make_code_challenge,
+    build_logout_url,
 )
 import jwt
 
@@ -41,13 +42,17 @@ def session_based(request):
 def oidc_based(request):
     state = secrets.token_urlsafe(32)  # checked in the callback URL
     oidc_nonce = secrets.token_urlsafe(32)  # checked inside the id_token
-    code_verifier = secrets.token_urlsafe(64)  # PKCE secret word, never leaves our server
+    code_verifier = secrets.token_urlsafe(
+        64
+    )  # PKCE secret word, never leaves our server
 
     request.session["oidc_state"] = state
     request.session["oidc_nonce"] = oidc_nonce
     request.session["oidc_code_verifier"] = code_verifier
 
-    code_challenge = make_code_challenge(code_verifier)  # only the fingerprint goes in the URL
+    code_challenge = make_code_challenge(
+        code_verifier
+    )  # only the fingerprint goes in the URL
 
     return redirect(build_authorize_url(state, oidc_nonce, code_challenge))
 
@@ -97,5 +102,21 @@ def oidc_callback(request):
 
     # 6. normal Django login: creates the session + digibio_sid cookie
     login(request, user)
+    request.session["oidc_id_token"] = tokens[
+        "id_token"
+    ]  # needed later as id_token_hint for logout
 
     return redirect("sso_experiment:redirect_page")
+
+
+# SSO logout: end our session, then send the browser to Keycloak to end its session too.
+def oidc_logout(request):
+    id_token = request.session.get(
+        "oidc_id_token"
+    )  # read it BEFORE logout() wipes the session
+    logout(request)  # ends our Django session
+
+    if not id_token:  # logged in with a password, not SSO: nothing to end at Keycloak
+        return redirect("sso_experiment:session_based")
+
+    return redirect(build_logout_url(id_token))

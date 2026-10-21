@@ -8,4 +8,5 @@ urlpatterns = [
     path("login/oidc/", views.oidc_based, name="oidc_based"),
     path("simple_redirect/", views.simple_redirect_page, name="redirect_page"),
     path("oidc/callback/", views.oidc_callback, name="oidc_callback"),
+    path("oidc/logout/", views.oidc_logout, name="oidc_logout"),
 ]

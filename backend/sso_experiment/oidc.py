@@ -43,7 +43,9 @@ def exchange_code_for_tokens(code, code_verifier):
 # Proves the id_token (the "letter") really comes from our Keycloak, then returns its contents.
 def verify_id_token(id_token):
     header = jwt.get_unverified_header(id_token)  # which key signed it ("kid")
-    jwks = requests.get(settings.OIDC_OP_JWKS_ENDPOINT, timeout=10).json()  # Keycloak's public keys
+    jwks = requests.get(
+        settings.OIDC_OP_JWKS_ENDPOINT, timeout=10
+    ).json()  # Keycloak's public keys
 
     # pick the public key that matches the token's kid
     signing_key = None
@@ -70,3 +72,12 @@ def make_code_challenge(code_verifier):
     fingerprint = hashlib.sha256(as_bytes).digest()  # bytes → 32-byte fingerprint
     as_text = base64.urlsafe_b64encode(fingerprint).decode()  # bytes → URL-safe text
     return as_text.rstrip("=")  # drop the "=" padding at the end
+
+
+# Builds the "log out at Keycloak too" link the browser is sent to.
+def build_logout_url(id_token):
+    params = {
+        "id_token_hint": id_token,  # proves which login is being ended
+        "post_logout_redirect_uri": settings.OIDC_POST_LOGOUT_REDIRECT_URI,  # where to come back to
+    }
+    return settings.OIDC_OP_LOGOUT_ENDPOINT + "?" + urlencode(params)
