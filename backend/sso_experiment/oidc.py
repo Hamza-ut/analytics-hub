@@ -1,44 +1,51 @@
 from urllib.parse import urlencode
-import requests
 from django.conf import settings
+import requests
+import hashlib
 import base64
 import json
 import jwt
 
 
-# used to create the SSO login url (first one)
-def build_authorize_url(state):
+# Builds the "go log in at Keycloak" link the browser is sent to.
+def build_authorize_url(state, nonce, code_challenge):
     params = {
-        "client_id": settings.OIDC_RP_CLIENT_ID,
-        "redirect_uri": settings.OIDC_REDIRECT_URI,
-        "response_type": "code",
-        "scope": "openid",
-        "state": state,
+        "client_id": settings.OIDC_RP_CLIENT_ID,  # who is asking: our app
+        "redirect_uri": settings.OIDC_REDIRECT_URI,  # where Keycloak sends the browser back
+        "response_type": "code",  # "give me a one-time ticket (code)"
+        "scope": "openid",  # "this is a login"
+        "state": state,  # comes back in the callback URL
+        "nonce": nonce,  # comes back inside the id_token
+        "code_challenge": code_challenge,  # fingerprint of our secret word (PKCE)
+        "code_challenge_method": "S256",  # how the fingerprint was made
     }
     return settings.OIDC_OP_AUTHORIZATION_ENDPOINT + "?" + urlencode(params)
 
 
-# client ask from server to exchange the code for tokens (second one) (like getting letter)
-def exchange_code_for_tokens(code):
+# Server-to-server call to Keycloak: trade the ticket (code) for tokens.
+# Same as the curl command we ran by hand.
+def exchange_code_for_tokens(code, code_verifier):
     response = requests.post(
         settings.OIDC_OP_TOKEN_ENDPOINT,
         data={
             "grant_type": "authorization_code",
-            "code": code,
+            "code": code,  # the ticket from the callback URL
             "redirect_uri": settings.OIDC_REDIRECT_URI,
-            "client_id": settings.OIDC_RP_CLIENT_ID,
-            "client_secret": settings.OIDC_RP_CLIENT_SECRET,
+            "client_id": settings.OIDC_RP_CLIENT_ID,  # proves it's our app...
+            "client_secret": settings.OIDC_RP_CLIENT_SECRET,  # ...with our app's password
+            "code_verifier": code_verifier,  # the secret word; Keycloak checks it matches the fingerprint
         },
         timeout=10,
     )
-    return response.json()
+    return response.json()  # Keycloak's answer: tokens, or an "error"
 
 
-# in this step this is like checking that letter authenticity and getting the user info from it
+# Proves the id_token (the "letter") really comes from our Keycloak, then returns its contents.
 def verify_id_token(id_token):
-    header = jwt.get_unverified_header(id_token)
-    jwks = requests.get(settings.OIDC_OP_JWKS_ENDPOINT, timeout=10).json()
+    header = jwt.get_unverified_header(id_token)  # which key signed it ("kid")
+    jwks = requests.get(settings.OIDC_OP_JWKS_ENDPOINT, timeout=10).json()  # Keycloak's public keys
 
+    # pick the public key that matches the token's kid
     signing_key = None
     for key in jwks["keys"]:
         if key["kid"] == header["kid"] and key.get("alg") == "RS256":
@@ -47,6 +54,7 @@ def verify_id_token(id_token):
     if signing_key is None:
         raise jwt.InvalidTokenError("No matching signing key in JWKS")
 
+    # checks signature + aud + iss + exp; raises an error if any fail, else returns the claims dict
     return jwt.decode(
         id_token,
         signing_key,
@@ -54,3 +62,11 @@ def verify_id_token(id_token):
         audience=settings.OIDC_RP_CLIENT_ID,
         issuer=settings.OIDC_OP_ISSUER,
     )
+
+
+# PKCE: turns the secret word into its fingerprint (SHA-256, base64url, no "=").
+def make_code_challenge(code_verifier):
+    as_bytes = code_verifier.encode()  # text → bytes
+    fingerprint = hashlib.sha256(as_bytes).digest()  # bytes → 32-byte fingerprint
+    as_text = base64.urlsafe_b64encode(fingerprint).decode()  # bytes → URL-safe text
+    return as_text.rstrip("=")  # drop the "=" padding at the end
