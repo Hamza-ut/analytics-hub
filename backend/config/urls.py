@@ -11,4 +11,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("api.v1.api_router")),
     path("health/", health_check, name="health_check"),
+    path(
+        "sso_experiment/", include("sso_experiment.urls")
+    ),  # Include the SSO experiment URLs
 ]

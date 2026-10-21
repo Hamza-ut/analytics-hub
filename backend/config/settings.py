@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",  # for frontend-backend communication
+    "sso_experiment",  # for SSO experiment
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,17 @@ else:
             "PORT": os.getenv("DB_PORT"),
         }
     }
+
+# SSO / OIDC (values come from backend/.env)
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET")
+OIDC_REDIRECT_URI = os.getenv("OIDC_REDIRECT_URI")
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv("OIDC_OP_AUTHORIZATION_ENDPOINT")
+OIDC_OP_TOKEN_ENDPOINT = os.getenv("OIDC_OP_TOKEN_ENDPOINT")
+
+OIDC_OP_JWKS_ENDPOINT = os.getenv("OIDC_OP_JWKS_ENDPOINT")
+OIDC_OP_ISSUER = os.getenv("OIDC_OP_ISSUER")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

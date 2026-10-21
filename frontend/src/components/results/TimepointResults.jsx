@@ -104,7 +104,7 @@ export function TimepointResults({ projectId }) {
 
       <div className={styles.sectionDivider} />
       {/* Top Recommended Time Windows (Summary) */}
-      <h3>Ideal Time Window for Dose Response Modelling</h3>
+      <h3>Ideal Time Window for Dose Response Curve Modelling</h3>
 
       <div className={styles.cardsGrid}>
         {topRecommendationsPerGroup.map((item, index) => {

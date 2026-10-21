@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>University of Tartu (Mock SSO Portal)</h1>
+    <p>You have been redirected to the external university login server.</p>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>University Username:</label><br>
+        <input type="text" name="username"><br><br>
+
+        <label>University Password:</label><br>
+        <input type="password" name="password"><br><br>
+
+        <button type="submit">Authorize & Send Ticket Back</button>
+    </form>
+</body>
+</html>

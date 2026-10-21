@@ -1,0 +1,19 @@
+<h2>Login to DigiBio Tools</h2>
+
+<!-- Regular Username/Password Form -->
+<form method="POST">
+  {% csrf_token %}
+  <input type="text" name="username" placeholder="Username" /><br/><br/>
+  <input type="password" name="password" placeholder="Password" /><br/><br/>
+  <button type="submit">Log In with Password</button>
+</form>
+
+<hr/>
+
+<p>Or sign in with your university account:</p>
+
+    <a href="{% url 'sso_experiment:oidc_based' %}">
+    <button type="button">Sign in with University account instead</button>
+</a>
+</body>
+</html>
