@@ -6,4 +6,5 @@ urlpatterns = [
     path("projects/", include("api.v1.projects.urls")),
     path("workflows/timepoint/", include("api.v1.workflows.timepoint.urls")),
     path("workflows/strainqc/", include("api.v1.workflows.strainqc.urls")),
+    path("sso_experiment/", include("api.v1.sso_experiment.urls")),
 ]

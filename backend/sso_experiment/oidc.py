@@ -11,7 +11,8 @@ import jwt
 def build_authorize_url(state, nonce, code_challenge):
     params = {
         "client_id": settings.OIDC_RP_CLIENT_ID,  # who is asking: our app
-        "redirect_uri": settings.OIDC_REDIRECT_URI,  # where Keycloak sends the browser back
+        "redirect_uri": settings.OIDC_API_REDIRECT_URI,  # where Keycloak sends the browser back
+        # "redirect_uri": settings.OIDC_REDIRECT_URI,  # session based old callback
         "response_type": "code",  # "give me a one-time ticket (code)"
         "scope": "openid",  # "this is a login"
         "state": state,  # comes back in the callback URL
@@ -30,7 +31,8 @@ def exchange_code_for_tokens(code, code_verifier):
         data={
             "grant_type": "authorization_code",
             "code": code,  # the ticket from the callback URL
-            "redirect_uri": settings.OIDC_REDIRECT_URI,
+            "redirect_uri": settings.OIDC_API_REDIRECT_URI,
+            # "redirect_uri": settings.OIDC_REDIRECT_URI,  # session based old callback
             "client_id": settings.OIDC_RP_CLIENT_ID,  # proves it's our app...
             "client_secret": settings.OIDC_RP_CLIENT_SECRET,  # ...with our app's password
             "code_verifier": code_verifier,  # the secret word; Keycloak checks it matches the fingerprint
