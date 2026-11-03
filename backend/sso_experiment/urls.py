@@ -4,9 +4,9 @@ from . import views
 app_name = "sso_experiment"
 
 urlpatterns = [
-    path("login/", views.session_based, name="session_based"),
-    path("login/oidc/", views.oidc_based, name="oidc_based"),
+    path("simple_session/", views.simple_session, name="simple_session"),
+    path("simple_oidc/", views.simple_oidc, name="simple_oidc"),
     path("simple_redirect/", views.simple_redirect_page, name="redirect_page"),
-    path("oidc/callback/", views.oidc_callback, name="oidc_callback"),
-    path("oidc/logout/", views.oidc_logout, name="oidc_logout"),
+    path("simple_callback/", views.simple_callback, name="simple_callback"),
+    path("simple_logout/", views.generic_logout, name="logout"),
 ]

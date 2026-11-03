@@ -23,7 +23,7 @@ def simple_redirect_page(request):
 
 
 # 1. Standard Login Page
-def session_based(request):
+def simple_session(request):
     if request.method == "POST":
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
@@ -39,7 +39,7 @@ def session_based(request):
 
 # SSO step 1: the "Sign in with University account" button lands here.
 # Makes three random one-time values, remembers them in the session, sends the browser to Keycloak.
-def oidc_based(request):
+def simple_oidc(request):
     state = secrets.token_urlsafe(32)  # checked in the callback URL
     oidc_nonce = secrets.token_urlsafe(32)  # checked inside the id_token
     code_verifier = secrets.token_urlsafe(
@@ -59,7 +59,7 @@ def oidc_based(request):
 
 # SSO step 2: Keycloak sends the browser back here with ?state=...&code=...
 # Check → exchange → verify → check → find user → log in. Any failure stops the login.
-def oidc_callback(request):
+def simple_callback(request):
     # 1. is this the login this browser started? (pop = single use)
     returned_state = request.GET.get("state")
     saved_state = request.session.pop("oidc_state", None)
@@ -110,13 +110,13 @@ def oidc_callback(request):
 
 
 # SSO logout: end our session, then send the browser to Keycloak to end its session too.
-def oidc_logout(request):
+def generic_logout(request):
     id_token = request.session.get(
         "oidc_id_token"
     )  # read it BEFORE logout() wipes the session
     logout(request)  # ends our Django session
 
     if not id_token:  # logged in with a password, not SSO: nothing to end at Keycloak
-        return redirect("sso_experiment:session_based")
+        return redirect("sso_experiment:simple_session")
 
     return redirect(build_logout_url(id_token))

@@ -2,6 +2,6 @@
 
 <p>Logged in as: <strong>{{ user.username|default:"nobody" }}</strong></p>
 
-<a href="{% url 'sso_experiment:oidc_logout' %}">
+<a href="{% url 'sso_experiment:logout' %}">
     <button type="button">Log out</button>
 </a>
