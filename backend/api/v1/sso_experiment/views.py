@@ -1,16 +1,15 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token, settings
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
 from api.v1.accounts.serializers import UserLoginSerializer
-from sso_experiment.oidc import (
+from sso_experiment.oidc_api import (
     build_authorize_url,
+    build_logout_url,
     make_code_challenge,
     exchange_code_for_tokens,
     verify_id_token,
@@ -119,4 +118,24 @@ class SSOCallback(APIView):
 
         # 6. NEW ENDING (instead of login() + redirect): hand out a DRF token
         token, _ = Token.objects.get_or_create(user=user)
+
+        # 7. save id_token in session for logout (id_token_hint)
+        request.session["oidc_id_token"] = tokens["id_token"]
+
         return redirect(f"{settings.FRONTEND_URL}/sso-landing?token={token.key}")
+
+
+class SSOLogout(APIView):
+    authentication_classes = (
+        []
+    )  # a page navigation: no token header, no logged-in session
+    permission_classes = []
+
+    def get(self, request):  # GET: the browser is SENT here (window.location)
+        id_token = request.session.pop("oidc_id_token", None)  # 1. read it FIRST
+        request.session.flush()  # 2. then clear the session
+
+        if not id_token:  # no SSO login in this browser (e.g. password login)
+            return redirect(f"{settings.FRONTEND_URL}/login")
+
+        return redirect(build_logout_url(id_token))  # 3. on to Keycloak's logout
