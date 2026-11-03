@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useBackendStatus } from "./BackendStatusContext";
 import { API_BASE_URL } from "../api/config";
+import { BACKEND_URL } from "../api/config";
 
 // private, not to be exported
 const AuthContext = createContext(null);
@@ -38,6 +39,9 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("userToken");
     setToken(null);
     setUser(null);
+
+    // 3. End Keycloak's session too: a real page navigation, through the backend
+    window.location.href = `${BACKEND_URL}/api/v1/sso_experiment/logout/`;
   }
 
   // Fetch user info whenever the token changes

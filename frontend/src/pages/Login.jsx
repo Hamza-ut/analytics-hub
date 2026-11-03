@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { API_BASE_URL } from "../api/config";
 import axios from "axios";
+import { BACKEND_URL } from "../api/config";
 
 export default function Login() {
   const {
@@ -51,6 +52,19 @@ export default function Login() {
 
       console.error(error);
     }
+  }
+
+  // SSO: a real page navigation (like typing a URL), NOT axios —
+  // the browser itself must travel to Django → Keycloak's login page → back.
+  function startSsoLogin() {
+    // TODO: put your backend's SSO start URL here, e.g.
+    const ssoLoginUrl = `${BACKEND_URL}/api/v1/sso_experiment/sso-login/`;
+
+    if (!ssoLoginUrl) {
+      setApiMessage({ type: "error", text: "SSO login URL is not set yet." });
+      return;
+    }
+    window.location.href = ssoLoginUrl;
   }
 
   return (
@@ -126,6 +140,40 @@ export default function Login() {
           Log In
         </button>
       </form>
+
+      {/* divider between the two ways to log in */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          margin: "24px 0",
+          color: "#888",
+          fontSize: "14px",
+        }}
+      >
+        <hr style={{ flex: 1, border: "none", borderTop: "1px solid #ddd" }} />
+        or
+        <hr style={{ flex: 1, border: "none", borderTop: "1px solid #ddd" }} />
+      </div>
+
+      <button
+        type="button"
+        onClick={startSsoLogin}
+        style={{
+          width: "100%",
+          padding: "10px 16px",
+          cursor: "pointer",
+          fontSize: "15px",
+          fontWeight: "bold",
+          color: "#fff",
+          backgroundColor: "#2c5282",
+          border: "none",
+          borderRadius: "6px",
+        }}
+      >
+        Sign in with University account
+      </button>
     </div>
   );
 }
